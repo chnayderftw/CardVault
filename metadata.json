@@ -1,0 +1,6 @@
+{
+  "name": "CardVault",
+  "description": "Dark-mode CardVault marketplace terminal for legally issued prepaid, gift, and virtual cards with USDT TRC20 payment settlement and administrative dashboard.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
