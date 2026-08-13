@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { CardProduct, FilterState } from '../types';
 import { FilterPanel } from './FilterPanel';
+import { CardBrandLogo } from './CardBrandLogo';
 
 interface MarketplaceProps {
   products: CardProduct[];
@@ -207,19 +208,14 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
                             onClick={() => onSelectProduct(p)}
                           >
                             <td className="p-2">
-                              {p.isPremium ? (
-                                <span className="text-white font-bold bg-yellow-600 px-1 py-0.5 text-[9px] uppercase">
-                                  PREMIUM
-                                </span>
-                              ) : (
-                                <span
-                                  className={`font-bold ${
-                                    isVisa ? 'text-blue-500' : isMaster ? 'text-orange-500' : 'text-purple-400'
-                                  }`}
-                                >
-                                  {p.brand.toUpperCase()}
-                                </span>
-                              )}
+                              <div className="flex items-center space-x-2">
+                                <CardBrandLogo brand={p.brand} size="sm" />
+                                {p.isPremium && (
+                                  <span className="text-white font-bold bg-yellow-600 px-1 py-0.5 text-[8px] uppercase">
+                                    PREMIUM
+                                  </span>
+                                )}
+                              </div>
                             </td>
 
                             <td className="p-2 font-medium text-white truncate max-w-[180px]">
@@ -294,7 +290,7 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
             </div>
           ) : (
             /* Grid View Cards */
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
               {filteredProducts.map((p) => (
                 <div
                   key={p.id}
@@ -302,13 +298,13 @@ export const Marketplace: React.FC<MarketplaceProps> = ({
                   className="bg-[#0a0a0a] border border-[#1f1f1f] hover:border-blue-500/60 p-4 transition cursor-pointer flex flex-col justify-between group space-y-3"
                 >
                   <div className="space-y-2">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] font-bold text-blue-400 bg-blue-950/40 border border-blue-800/40 px-1.5 py-0.5">
-                        {p.brand.toUpperCase()}
-                      </span>
-                      <span className="text-[10px] font-mono text-yellow-500">
-                        BIN {p.bin}
-                      </span>
+                    {/* Card Photo Preview Box */}
+                    <div className="bg-[#111111] border border-[#222222] p-3 rounded flex items-center justify-between h-20 relative overflow-hidden group-hover:border-blue-500/50 transition">
+                      <CardBrandLogo brand={p.brand} size="md" />
+                      <div className="text-right">
+                        <span className="text-[9px] font-mono text-yellow-500 block">BIN {p.bin}</span>
+                        <span className="text-[9px] text-[#888888] font-mono block">{p.issuer}</span>
+                      </div>
                     </div>
 
                     <div>

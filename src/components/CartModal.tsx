@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { X, Trash2, ShoppingBag, Zap, Wallet, ShieldCheck, ArrowRight, Copy, Check } from 'lucide-react';
 import { CardProduct, Order, User, SiteSettings } from '../types';
 import { api } from '../lib/api';
+import { CardBrandLogo } from './CardBrandLogo';
 
 interface CartModalProps {
   cart: { product: CardProduct; quantity: number }[];
@@ -107,12 +108,15 @@ export const CartModal: React.FC<CartModalProps> = ({
               {cart.map(({ product, quantity }) => (
                 <div
                   key={product.id}
-                  className="bg-[#121212] border border-[#222222] p-3 flex items-center justify-between"
+                  className="bg-[#121212] border border-[#222222] p-3 flex items-center justify-between gap-3"
                 >
-                  <div>
-                    <div className="text-white font-bold">{product.name}</div>
-                    <div className="text-[10px] text-[#777777]">
-                      {product.brand} • BIN {product.bin} • {product.level}
+                  <div className="flex items-center space-x-3">
+                    <CardBrandLogo brand={product.brand} size="sm" />
+                    <div>
+                      <div className="text-white font-bold">{product.name}</div>
+                      <div className="text-[10px] text-[#777777]">
+                        BIN {product.bin} • {product.level}
+                      </div>
                     </div>
                   </div>
 

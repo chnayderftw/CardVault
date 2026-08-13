@@ -13,6 +13,7 @@ import {
   Globe
 } from 'lucide-react';
 import { CardProduct, User, Announcement, SiteSettings } from '../types';
+import { CardBrandLogo } from './CardBrandLogo';
 
 interface DashboardViewProps {
   user: User | null;
@@ -150,15 +151,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               className="bg-[#0a0a0a] border border-[#1f1f1f] hover:border-blue-500/60 p-3 flex flex-col justify-between transition cursor-pointer group space-y-3"
             >
               <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[9px] font-bold text-blue-400 uppercase bg-blue-950/40 px-1.5 py-0.5 border border-blue-800/40">
-                    BIN {p.bin}
-                  </span>
-                  {p.isPremium && (
-                    <span className="text-[8px] font-bold text-amber-300 bg-amber-400/20 px-1.5 py-0.5 border border-amber-400/30 uppercase">
-                      PREMIUM
-                    </span>
-                  )}
+                <div className="bg-[#111111] border border-[#222222] p-2.5 rounded flex items-center justify-between h-16 group-hover:border-blue-500/50 transition">
+                  <CardBrandLogo brand={p.brand} size="sm" />
+                  <div className="text-right">
+                    <span className="text-[9px] font-mono text-yellow-500 block">BIN {p.bin}</span>
+                    {p.isPremium && (
+                      <span className="text-[8px] font-bold text-amber-300 bg-amber-400/20 px-1 py-0.2 uppercase">
+                        PREMIUM
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 <div>

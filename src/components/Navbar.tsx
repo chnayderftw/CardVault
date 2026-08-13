@@ -57,7 +57,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   return (
     <header className="sticky top-0 z-40 bg-[#0a0a0a] border-b border-[#1f1f1f] text-xs font-mono">
       {/* Main Bar */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6">
+      <div className="max-w-[1800px] w-full mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-12">
           {/* Brand Logo */}
           <div className="flex items-center space-x-2.5 cursor-pointer" onClick={() => setActiveTab('home')}>

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Order, SiteSettings } from '../types';
 import { api } from '../lib/api';
+import { CardBrandLogo } from './CardBrandLogo';
 
 interface OrdersViewProps {
   orders: Order[];
@@ -277,9 +278,7 @@ Issuer Notice:   Legally issued virtual/prepaid product. Store securely.
                 {/* Card Visual Graphic */}
                 <div className="relative bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 border border-blue-800/50 rounded-lg p-4 text-white shadow-xl space-y-3">
                   <div className="flex justify-between items-center">
-                    <span className="text-[10px] font-bold tracking-widest text-blue-400 uppercase font-mono">
-                      {selectedOrder.productBrand} VIRTUAL CARD
-                    </span>
+                    <CardBrandLogo brand={selectedOrder.productBrand} size="md" />
                     <span className="text-[9px] text-emerald-400 font-mono font-bold bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800/50">
                       ACTIVE • DELIVERED
                     </span>

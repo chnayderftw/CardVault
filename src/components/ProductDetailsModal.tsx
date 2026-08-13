@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X, ShieldCheck, ShoppingBag, Zap, Globe, Building, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { CardProduct, User } from '../types';
+import { CardBrandLogo } from './CardBrandLogo';
 
 interface ProductDetailsModalProps {
   product: CardProduct | null;
@@ -29,14 +30,8 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
       <div className="w-full max-w-lg bg-[#0a0a0a] border border-[#1f1f1f] text-xs text-[#e0e0e0] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="flex items-center justify-between p-3 bg-[#111111] border-b border-[#1f1f1f]">
-          <div className="flex items-center space-x-2">
-            <span
-              className={`font-bold px-1.5 py-0.5 text-[10px] uppercase ${
-                product.isPremium ? 'bg-yellow-600 text-black' : 'bg-blue-600 text-white'
-              }`}
-            >
-              {product.brand.toUpperCase()}
-            </span>
+          <div className="flex items-center space-x-2.5">
+            <CardBrandLogo brand={product.brand} size="sm" />
             <span className="font-bold text-xs uppercase tracking-wider text-white truncate max-w-[240px]">
               {product.name}
             </span>
@@ -49,15 +44,18 @@ export const ProductDetailsModal: React.FC<ProductDetailsModalProps> = ({
         {/* Modal Body */}
         <div className="p-4 overflow-y-auto space-y-4 flex-1">
           {/* Card Preview Banner */}
-          <div className="bg-[#121212] border border-[#222222] p-4 flex flex-col justify-between h-36 relative overflow-hidden">
+          <div className="bg-gradient-to-br from-[#181818] to-[#0c0c0c] border border-[#2a2a2a] p-4 flex flex-col justify-between h-40 relative overflow-hidden rounded-lg shadow-xl">
             <div className="flex justify-between items-start z-10">
-              <div>
-                <span className="text-[9px] text-[#777777] uppercase block">{product.issuer}</span>
-                <span className="text-sm font-bold text-white tracking-widest">{product.name}</span>
+              <div className="space-y-1">
+                <CardBrandLogo brand={product.brand} size="lg" />
+                <span className="text-[9px] text-[#888888] uppercase block tracking-wider pt-1">{product.issuer}</span>
               </div>
-              <span className="text-xs font-bold text-yellow-500 font-mono">
-                BIN {product.bin}
-              </span>
+              <div className="text-right">
+                <span className="text-sm font-bold text-yellow-500 font-mono block">
+                  BIN {product.bin}
+                </span>
+                <span className="text-[9px] text-[#777777] block">{product.country}</span>
+              </div>
             </div>
 
             <div className="flex justify-between items-end z-10">
