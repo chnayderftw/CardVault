@@ -61,7 +61,7 @@ export const AdminDashboard: React.FC = () => {
     region: 'US',
     image: '/cards/visa-100.png',
     description: '',
-    terms: 'Non-reloadable prepaid card. Valid for 24 months from issuance.',
+    terms: 'Non-reloadable card. Valid for 24 months from issuance.',
     availability: 'in_stock' as const,
     stockCount: 50,
     seller: 'CardVault Official',
@@ -537,7 +537,7 @@ export const AdminDashboard: React.FC = () => {
             <div className="bg-[#141414] border border-[#262626] rounded-md p-3.5 space-y-0.5">
               <span className="text-[10px] font-mono text-[#737373] uppercase">ACTIVE PRODUCTS</span>
               <div className="text-xl font-black text-blue-400 font-mono">{stats.activeProducts}</div>
-              <span className="text-[10px] text-[#737373] font-mono">In-stock prepaid catalog items</span>
+              <span className="text-[10px] text-[#737373] font-mono">In-stock card catalog items</span>
             </div>
 
             <div className="bg-[#141414] border border-[#262626] rounded-md p-3.5 space-y-0.5">
@@ -1101,6 +1101,16 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               <div className="grid grid-cols-3 gap-3">
+                <div className="space-y-1">
+                  <label className="text-[#8e8e8e] font-semibold">Face Value ($)</label>
+                  <input
+                    type="number"
+                    required
+                    value={productForm.value}
+                    onChange={(e) => setProductForm({ ...productForm, value: parseFloat(e.target.value) || 0 })}
+                    className="w-full bg-[#101010] border border-[#262626] rounded px-3 py-1.5 text-white font-mono"
+                  />
+                </div>
 
                 <div className="space-y-1">
                   <label className="text-[#8e8e8e] font-semibold">Selling Price ($)</label>

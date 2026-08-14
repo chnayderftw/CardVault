@@ -40,7 +40,7 @@ export const ProductCard: React.FC<ProductCardProps> = ({
       {/* Middle Section: Metadata */}
       <div className="flex-1 flex flex-col">
         {/* Product Name */}
-        <h3 className="text-xs font-semibold text-white line-clamp-1 group-hover:text-blue-400 transition-colors">
+        <h3 className="text-xs font-semibold text-white line-clamp-2 min-h-[32px] group-hover:text-blue-400 transition-colors leading-tight">
           {product.name}
         </h3>
 

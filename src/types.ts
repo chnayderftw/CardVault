@@ -146,3 +146,17 @@ export interface AdminStats {
   totalUsers: number;
   completedOrders: number;
 }
+
+export interface Payment {
+  id: string;
+  orderId: string;
+  userId?: string;
+  amount: number;
+  currency: string;
+  network: string;
+  paymentAddress: string;
+  transactionHash?: string;
+  status: 'pending' | 'confirmed' | 'failed' | 'expired';
+  createdAt: string;
+  updatedAt: string;
+}

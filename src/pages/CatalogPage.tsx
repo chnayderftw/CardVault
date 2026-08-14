@@ -66,7 +66,7 @@ export const CatalogPage: React.FC<CatalogPageProps> = ({
       if (sortBy === 'price_asc') return a.price - b.price;
       if (sortBy === 'price_desc') return b.price - a.price;
       if (sortBy === 'name') return a.name.localeCompare(b.name);
-      return (b.featured ? 1 : 0) - (a.featured ? 1 : 0);
+      return 0;
     });
 
   return (

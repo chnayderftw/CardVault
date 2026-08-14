@@ -22,7 +22,7 @@ export function generateToken(user: User): string {
   );
 }
 
-export function authenticate(req: AuthRequest, res: Response, next: NextFunction) {
+export async function authenticate(req: AuthRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return res.status(401).json({ error: 'Authentication token required' });
@@ -31,7 +31,7 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   const token = authHeader.substring(7);
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as any;
-    const user = db.findUserById(decoded.id);
+    const user = await db.findUserById(decoded.id);
     if (!user) {
       return res.status(401).json({ error: 'User no longer exists' });
     }
@@ -45,18 +45,18 @@ export function authenticate(req: AuthRequest, res: Response, next: NextFunction
   }
 }
 
-export function optionalAuthenticate(req: AuthRequest, res: Response, next: NextFunction) {
+export async function optionalAuthenticate(req: AuthRequest, res: Response, next: NextFunction) {
   const authHeader = req.headers.authorization;
   if (authHeader && authHeader.startsWith('Bearer ')) {
     const token = authHeader.substring(7);
     try {
       const decoded = jwt.verify(token, JWT_SECRET) as any;
-      const user = db.findUserById(decoded.id);
+      const user = await db.findUserById(decoded.id);
       if (user && user.status !== 'disabled') {
         req.user = user;
       }
     } catch {
-      // ignore
+      // ignore invalid token
     }
   }
   next();

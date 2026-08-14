@@ -1,4 +1,4 @@
-import { Product, Order, User, SiteSettings, Category, AdminStats, DeliveredCardInfo } from './types';
+import { Product, Order, User, SiteSettings, Category, AdminStats, DeliveredCardInfo, Payment } from './types';
 
 const API_BASE = '/api';
 
@@ -264,5 +264,26 @@ export const api = {
       body: JSON.stringify(settings),
     });
     return res.json();
+  },
+
+  async getAdminPayments(params?: { status?: string; search?: string }): Promise<Payment[]> {
+    const query = new URLSearchParams();
+    if (params?.status && params.status !== 'All') query.set('status', params.status);
+    if (params?.search) query.set('search', params.search);
+    const res = await fetch(`${API_BASE}/admin/payments?${query.toString()}`, {
+      headers: getAuthHeader(),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to fetch payment records');
+    return result;
+  },
+
+  async getPaymentStatus(orderId: string): Promise<Payment> {
+    const res = await fetch(`${API_BASE}/payments/order/${orderId}`, {
+      headers: getAuthHeader(),
+    });
+    const result = await res.json();
+    if (!res.ok) throw new Error(result.error || 'Failed to fetch payment');
+    return result;
   }
 };
