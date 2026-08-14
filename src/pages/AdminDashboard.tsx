@@ -1100,7 +1100,7 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </div>
 
-              
+              <div className="grid grid-cols-3 gap-3">
 
                 <div className="space-y-1">
                   <label className="text-[#8e8e8e] font-semibold">Selling Price ($)</label>
