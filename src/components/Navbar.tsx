@@ -1,177 +1,227 @@
 import React, { useState } from 'react';
-import {
-  CreditCard,
-  ShieldCheck,
-  Wallet,
-  LogOut,
-  LogIn,
-  UserPlus,
-  ShoppingBag,
-  Menu,
-  X,
-  Lock,
-  Vault,
-  HelpCircle,
-  Newspaper,
-  PhoneCall,
-  Bell
-} from 'lucide-react';
-import { User } from '../types';
+import { CreditCard, ShoppingCart, User as UserIcon, Shield, Menu, X, ArrowRight, Wallet, PackageCheck } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
+import { useCart } from '../context/CartContext';
 
 interface NavbarProps {
-  user: User | null;
-  activeTab: string;
-  setActiveTab: (tab: string) => void;
-  cartCount: number;
-  onOpenCart: () => void;
-  onOpenAuth: (mode: 'login' | 'register') => void;
-  onLogout: () => void;
-  siteNotice?: string;
+  currentView: string;
+  onNavigate: (view: string, extra?: any) => void;
+  onOpenAuth: (mode: 'login' | 'signup') => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({
-  user,
-  activeTab,
-  setActiveTab,
-  cartCount,
-  onOpenCart,
-  onOpenAuth,
-  onLogout,
-  siteNotice
-}) => {
+export const Navbar: React.FC<NavbarProps> = ({ currentView, onNavigate, onOpenAuth }) => {
+  const { user, logout, isAdmin } = useAuth();
+  const { totalCount, setIsCartOpen } = useCart();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
-  const navItems = [
-    { id: 'home', label: 'HOME' },
-    { id: 'cards', label: 'CARDS' },
-    { id: 'premium', label: 'PREMIUM' },
-    { id: 'standard', label: 'STANDARD' },
-    { id: 'orders', label: 'ORDERS' },
-    { id: 'deposit', label: 'DEPOSIT' },
-    { id: 'support', label: 'SUPPORT' },
-    { id: 'faq', label: 'FAQ' },
-    { id: 'news', label: 'NEWS' },
-    { id: 'contact', label: 'CONTACT' },
-  ];
+  const handleNavClick = (view: string) => {
+    onNavigate(view);
+    setMobileMenuOpen(false);
+    setUserDropdownOpen(false);
+  };
 
   return (
-    <header className="sticky top-0 z-40 bg-[#0a0a0a] border-b border-[#1f1f1f] text-xs font-mono">
-      {/* Main Bar */}
-      <div className="max-w-[1800px] w-full mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-12">
-          {/* Brand Logo */}
-          <div className="flex items-center space-x-2.5 cursor-pointer" onClick={() => setActiveTab('home')}>
-            <div className="w-7 h-7 bg-gradient-to-br from-blue-600 via-blue-700 to-indigo-800 rounded flex items-center justify-center font-bold text-xs text-white shadow-md shadow-blue-900/30 border border-blue-400/40">
-              <Vault className="w-4 h-4 text-white" />
-            </div>
-            <div className="flex items-baseline">
-              <span className="font-extrabold text-sm tracking-tight uppercase text-white font-sans">
-                CARD<span className="text-blue-500">VAULT</span>
-              </span>
-              <span className="hidden sm:inline-block ml-2 text-[9px] text-[#777777] tracking-widest uppercase font-mono">
-                TERMINAL
-              </span>
-            </div>
+    <header className="sticky top-0 z-40 bg-[#121212] border-b border-[#262626] select-none">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14">
+          {/* Brand / Logo */}
+          <div className="flex items-center space-x-3">
+            <button
+              id="navbar-logo-btn"
+              onClick={() => handleNavClick('catalog')}
+              className="flex items-center space-x-2 text-left group focus:outline-none"
+            >
+              <div className="w-8 h-8 rounded bg-blue-600 flex items-center justify-center text-white shadow-sm group-hover:bg-blue-500 transition-colors">
+                <CreditCard className="w-4 h-4" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-base font-bold tracking-tight text-white flex items-center">
+                  Card<span className="text-blue-400">Vault</span>
+                </span>
+                <span className="text-[9px] text-[#737373] font-mono -mt-1 tracking-wider uppercase">
+                  Card Marketplace
+                </span>
+              </div>
+            </button>
           </div>
 
-          {/* Desktop Right Side Balance & Auth */}
-          <div className="hidden lg:flex items-center space-x-4">
-            {user && (
-              <div className="flex items-center space-x-3 bg-[#121212] border border-[#222222] px-2.5 py-1">
-                <div className="flex flex-col items-end">
-                  <span className="text-[8px] uppercase text-[#777777]">Account Balance</span>
-                  <span className="text-xs font-mono font-bold text-yellow-500">
-                    ${user.balance.toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}{' '}
-                    <span className="text-[9px] text-blue-400 font-normal">USDT</span>
-                  </span>
-                </div>
-                <button
-                  onClick={() => setActiveTab('deposit')}
-                  className="bg-yellow-600 hover:bg-yellow-500 text-black px-2 py-0.5 text-[10px] font-bold uppercase tracking-wider transition"
-                >
-                  DEPOSIT
-                </button>
-              </div>
-            )}
+          {/* Desktop Navigation Links */}
+          <nav className="hidden md:flex items-center space-x-1 text-xs font-medium">
+            <button
+              id="nav-link-products"
+              onClick={() => handleNavClick('catalog')}
+              className={`px-3 py-1.5 rounded transition-colors ${
+                currentView === 'catalog'
+                  ? 'bg-[#1e1e1e] text-blue-400 font-semibold'
+                  : 'text-[#a3a3a3] hover:text-white hover:bg-[#1a1a1a]'
+              }`}
+            >
+              Products
+            </button>
 
+            <button
+              id="nav-link-categories"
+              onClick={() => handleNavClick('catalog')}
+              className={`px-3 py-1.5 rounded transition-colors ${
+                currentView === 'categories'
+                  ? 'bg-[#1e1e1e] text-blue-400 font-semibold'
+                  : 'text-[#a3a3a3] hover:text-white hover:bg-[#1a1a1a]'
+              }`}
+            >
+              Categories
+            </button>
+
+            <button
+              id="nav-link-orders"
+              onClick={() => {
+                if (user) {
+                  handleNavClick('orders');
+                } else {
+                  onOpenAuth('login');
+                }
+              }}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition-colors ${
+                currentView === 'orders'
+                  ? 'bg-[#1e1e1e] text-blue-400 font-semibold'
+                  : 'text-[#a3a3a3] hover:text-white hover:bg-[#1a1a1a]'
+              }`}
+            >
+              <PackageCheck className="w-3.5 h-3.5" />
+              <span>My Orders</span>
+            </button>
+
+            <button
+              id="nav-link-payments"
+              onClick={() => handleNavClick('payments_info')}
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded transition-colors ${
+                currentView === 'payments_info'
+                  ? 'bg-[#1e1e1e] text-blue-400 font-semibold'
+                  : 'text-[#a3a3a3] hover:text-white hover:bg-[#1a1a1a]'
+              }`}
+            >
+              <Wallet className="w-3.5 h-3.5 text-emerald-400" />
+              <span>USDT TRC20</span>
+            </button>
+
+            {isAdmin && (
+              <button
+                id="nav-link-admin"
+                onClick={() => handleNavClick('admin')}
+                className={`flex items-center space-x-1 px-3 py-1.5 rounded border border-amber-500/40 text-amber-300 bg-amber-950/30 hover:bg-amber-900/40 transition-colors text-xs font-semibold`}
+              >
+                <Shield className="w-3.5 h-3.5 text-amber-400" />
+                <span>Admin Panel</span>
+              </button>
+            )}
+          </nav>
+
+          {/* Right Action Icons & Auth */}
+          <div className="flex items-center space-x-2.5">
             {/* Cart Button */}
             <button
-              onClick={onOpenCart}
-              className="relative bg-[#151515] hover:bg-[#202020] border border-[#2a2a2a] p-1.5 transition text-[#aaaaaa] hover:text-white"
+              id="navbar-cart-btn"
+              onClick={() => setIsCartOpen(true)}
+              className="relative p-2 text-[#a3a3a3] hover:text-white hover:bg-[#1e1e1e] rounded-md transition-colors flex items-center border border-[#262626]"
               title="Shopping Cart"
             >
-              <ShoppingBag className="w-4 h-4" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1.5 -right-1.5 bg-blue-600 text-white text-[9px] font-bold w-4 h-4 flex items-center justify-center border border-[#0a0a0a]">
-                  {cartCount}
+              <ShoppingCart className="w-4 h-4" />
+              {totalCount > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 bg-blue-600 text-white text-[10px] font-bold w-4 h-4 rounded-full flex items-center justify-center shadow-md">
+                  {totalCount}
                 </span>
               )}
             </button>
 
-            {/* Auth / Admin actions */}
+            {/* Auth / Account */}
             {user ? (
-              <div className="flex items-center space-x-2">
-                {user.role === 'admin' && (
-                  <button
-                    onClick={() => setActiveTab('admin')}
-                    className={`px-2 py-1 text-[10px] font-bold uppercase border transition ${
-                      activeTab === 'admin'
-                        ? 'bg-blue-600 text-white border-blue-500'
-                        : 'bg-blue-950/40 text-blue-400 border-blue-800/60 hover:bg-blue-900/40'
-                    }`}
-                  >
-                    <Lock className="w-3 h-3 inline-block mr-1" />
-                    ADMIN
-                  </button>
-                )}
+              <div className="relative">
+                <button
+                  id="navbar-user-btn"
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center space-x-2 p-1.5 pl-2.5 bg-[#161616] hover:bg-[#202020] border border-[#262626] rounded-md text-xs text-[#d1d1d1] transition-colors"
+                >
+                  <UserIcon className="w-3.5 h-3.5 text-blue-400" />
+                  <span className="font-medium max-w-[100px] truncate">{user.fullName.split(' ')[0]}</span>
+                  {user.role === 'admin' && (
+                    <span className="bg-amber-500/20 text-amber-300 text-[9px] px-1 py-0.2 rounded border border-amber-500/40">Admin</span>
+                  )}
+                </button>
 
-                <div className="flex items-center space-x-2 bg-[#121212] border border-[#222222] px-2 py-1">
-                  <span className="text-[10px] text-white font-bold max-w-[100px] truncate">{user.fullName}</span>
-                  <button
-                    onClick={onLogout}
-                    className="text-[#777777] hover:text-red-400 text-[10px] uppercase font-bold pl-1"
-                    title="Logout"
+                {userDropdownOpen && (
+                  <div
+                    id="user-dropdown-menu"
+                    className="absolute right-0 mt-2 w-48 bg-[#161616] border border-[#262626] rounded-md shadow-xl py-1 z-50 text-xs"
                   >
-                    <LogOut className="w-3.5 h-3.5 inline" />
-                  </button>
-                </div>
+                    <div className="px-3 py-2 border-b border-[#262626] text-[#a3a3a3]">
+                      <p className="font-semibold text-white truncate">{user.fullName}</p>
+                      <p className="truncate text-[10px] text-[#737373]">{user.email}</p>
+                    </div>
+
+                    <button
+                      onClick={() => handleNavClick('account')}
+                      className="w-full text-left px-3 py-2 text-[#d1d1d1] hover:bg-[#222222] flex items-center justify-between"
+                    >
+                      <span>My Account</span>
+                      <ArrowRight className="w-3 h-3 text-[#737373]" />
+                    </button>
+
+                    <button
+                      onClick={() => handleNavClick('orders')}
+                      className="w-full text-left px-3 py-2 text-[#d1d1d1] hover:bg-[#222222] flex items-center justify-between"
+                    >
+                      <span>Order History</span>
+                      <ArrowRight className="w-3 h-3 text-[#737373]" />
+                    </button>
+
+                    {isAdmin && (
+                      <button
+                        onClick={() => handleNavClick('admin')}
+                        className="w-full text-left px-3 py-2 text-amber-300 hover:bg-amber-950/50 flex items-center justify-between"
+                      >
+                        <span>Admin Dashboard</span>
+                        <Shield className="w-3 h-3 text-amber-400" />
+                      </button>
+                    )}
+
+                    <div className="border-t border-[#262626] my-1" />
+
+                    <button
+                      onClick={() => {
+                        logout();
+                        setUserDropdownOpen(false);
+                      }}
+                      className="w-full text-left px-3 py-2 text-rose-400 hover:bg-rose-950/40"
+                    >
+                      Sign Out
+                    </button>
+                  </div>
+                )}
               </div>
             ) : (
-              <div className="flex items-center space-x-2">
+              <div className="flex items-center space-x-1.5">
                 <button
+                  id="navbar-login-btn"
                   onClick={() => onOpenAuth('login')}
-                  className="bg-[#151515] border border-[#2a2a2a] px-2.5 py-1 text-[10px] uppercase font-bold text-[#cccccc] hover:text-white hover:bg-[#202020] transition"
+                  className="px-3 py-1.5 text-xs font-semibold text-[#d1d1d1] hover:text-white bg-[#161616] hover:bg-[#222222] border border-[#262626] rounded transition-colors"
                 >
-                  <LogIn className="w-3 h-3 inline mr-1 text-blue-400" />
-                  LOGIN
+                  Login
                 </button>
                 <button
-                  onClick={() => onOpenAuth('register')}
-                  className="bg-blue-600 hover:bg-blue-500 text-white px-2.5 py-1 text-[10px] uppercase font-bold tracking-wider transition"
+                  id="navbar-signup-btn"
+                  onClick={() => onOpenAuth('signup')}
+                  className="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-500 rounded transition-colors shadow-sm"
                 >
-                  <UserPlus className="w-3 h-3 inline mr-1" />
-                  SIGN UP
+                  Sign Up
                 </button>
               </div>
             )}
-          </div>
 
-          {/* Mobile menu icon */}
-          <div className="flex lg:hidden items-center space-x-2">
+            {/* Mobile menu hamburger */}
             <button
-              onClick={onOpenCart}
-              className="relative p-1.5 bg-[#151515] border border-[#2a2a2a] text-white"
-            >
-              <ShoppingBag className="w-4 h-4" />
-              {cartCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-blue-600 text-white text-[9px] w-3.5 h-3.5 flex items-center justify-center">
-                  {cartCount}
-                </span>
-              )}
-            </button>
-            <button
+              id="navbar-mobile-toggle"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-1.5 bg-[#151515] border border-[#2a2a2a] text-white"
+              className="md:hidden p-1.5 text-[#a3a3a3] hover:text-white hover:bg-[#1a1a1a] rounded"
             >
               {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
@@ -179,100 +229,36 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
       </div>
 
-      {/* Navigation Bar Links */}
-      <div className="bg-[#050505] border-t border-[#1a1a1a]">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center space-x-1 overflow-x-auto py-1 scrollbar-none text-[10px] font-bold text-[#888888] uppercase tracking-wider">
-            {navItems.map((item) => {
-              const isActive = activeTab === item.id;
-              return (
-                <button
-                  key={item.id}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`px-2.5 py-1 transition whitespace-nowrap ${
-                    isActive
-                      ? 'text-white border-b-2 border-blue-500 font-extrabold bg-[#111111]'
-                      : 'hover:text-white hover:bg-[#121212]'
-                  }`}
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-
-      {/* Mobile Drawer */}
+      {/* Mobile dropdown */}
       {mobileMenuOpen && (
-        <div className="lg:hidden bg-[#0a0a0a] border-b border-[#1f1f1f] p-4 space-y-3 font-mono">
-          {user && (
-            <div className="bg-[#121212] p-2 border border-[#222222] flex justify-between items-center mb-2">
-              <div>
-                <div className="text-[9px] text-[#777777] uppercase">Account Balance</div>
-                <div className="text-sm font-bold text-yellow-500">${user.balance.toFixed(2)} USDT</div>
-              </div>
-              <button
-                onClick={() => {
-                  setActiveTab('deposit');
-                  setMobileMenuOpen(false);
-                }}
-                className="bg-yellow-600 text-black px-2 py-1 text-[10px] font-bold uppercase"
-              >
-                Deposit
-              </button>
-            </div>
-          )}
-
-          <div className="grid grid-cols-2 gap-1 text-[10px] font-bold uppercase">
-            {navItems.map((item) => (
-              <button
-                key={item.id}
-                onClick={() => {
-                  setActiveTab(item.id);
-                  setMobileMenuOpen(false);
-                }}
-                className={`p-2 text-left border ${
-                  activeTab === item.id
-                    ? 'bg-blue-600 text-white border-blue-500'
-                    : 'bg-[#121212] text-[#888888] border-[#222222]'
-                }`}
-              >
-                {item.label}
-              </button>
-            ))}
-          </div>
-
-          {!user ? (
-            <div className="grid grid-cols-2 gap-2 pt-2">
-              <button
-                onClick={() => {
-                  onOpenAuth('login');
-                  setMobileMenuOpen(false);
-                }}
-                className="bg-[#151515] border border-[#2a2a2a] py-2 text-[10px] font-bold text-white uppercase"
-              >
-                Login
-              </button>
-              <button
-                onClick={() => {
-                  onOpenAuth('register');
-                  setMobileMenuOpen(false);
-                }}
-                className="bg-blue-600 py-2 text-[10px] font-bold text-white uppercase"
-              >
-                Sign Up
-              </button>
-            </div>
-          ) : (
+        <div className="md:hidden bg-[#121212] border-b border-[#262626] px-4 py-3 space-y-2 text-sm">
+          <button
+            onClick={() => handleNavClick('catalog')}
+            className="w-full text-left py-2 px-3 rounded text-[#d1d1d1] hover:bg-[#1f1f1f]"
+          >
+            Products Catalog
+          </button>
+          <button
+            onClick={() => {
+              if (user) handleNavClick('orders');
+              else onOpenAuth('login');
+            }}
+            className="w-full text-left py-2 px-3 rounded text-[#d1d1d1] hover:bg-[#1f1f1f]"
+          >
+            My Orders
+          </button>
+          <button
+            onClick={() => handleNavClick('payments_info')}
+            className="w-full text-left py-2 px-3 rounded text-emerald-400 hover:bg-[#1f1f1f]"
+          >
+            USDT TRC20 Payments
+          </button>
+          {isAdmin && (
             <button
-              onClick={() => {
-                onLogout();
-                setMobileMenuOpen(false);
-              }}
-              className="w-full bg-red-950/40 border border-red-800/40 text-red-400 py-2 text-[10px] font-bold uppercase"
+              onClick={() => handleNavClick('admin')}
+              className="w-full text-left py-2 px-3 rounded text-amber-300 bg-amber-950/30 border border-amber-500/30"
             >
-              Logout
+              Admin Panel
             </button>
           )}
         </div>

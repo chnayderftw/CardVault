@@ -1,582 +1,735 @@
 import fs from 'fs';
 import path from 'path';
 import bcrypt from 'bcryptjs';
-import {
-  User,
-  CardProduct,
-  Order,
-  Deposit,
-  SupportTicket,
-  Announcement,
-  AuditLog,
-  SiteSettings
-} from '../src/types';
+import { Product, Order, User, Category, SiteSettings, InventoryReference } from '../src/types';
 
-const DATA_DIR = path.join(process.cwd(), 'data');
-const DB_FILE = path.join(DATA_DIR, 'marketplace.json');
-
-interface DatabaseData {
-  users: Array<User & { passwordHash: string }>;
-  products: CardProduct[];
+export interface DatabaseSchema {
+  users: (User & { passwordHash: string })[];
+  products: Product[];
+  categories: Category[];
   orders: Order[];
-  deposits: Deposit[];
-  tickets: SupportTicket[];
-  announcements: Announcement[];
-  auditLogs: AuditLog[];
+  inventory: InventoryReference[];
   settings: SiteSettings;
 }
 
-const DEFAULT_SETTINGS: SiteSettings = {
-  trc20WalletAddress: process.env.TRC20_WALLET_ADDRESS || 'TG1LiM1h3iLf654gAx1msadrDf65q2AbAC',
-  usdtExchangeRate: 1.0,
-  minDeposit: 10.0,
-  siteNotice: '',
-};
+const DATA_DIR = path.join(process.cwd(), 'data');
+const DB_FILE = path.join(DATA_DIR, 'cardvault_db.json');
 
-const INITIAL_PRODUCTS: CardProduct[] = [
-  {
-    id: 'prod-001',
-    brand: 'Visa',
-    name: 'Visa Business Virtual Prepaid',
-    bin: '411111',
-    issuer: 'Bancorp Bank, N.A.',
-    cardType: 'Virtual',
-    level: 'UHQ',
-    country: 'United States',
-    currency: 'USD',
-    region: 'North America',
-    expirationPolicy: 'Valid 24 Months',
-    features: ['Instant Portal Issuance', '3D Secure v2', 'Global USD Merchant Acceptance', 'Expense Reporting'],
-    price: 520.0,
-    stock: 45,
-    isPremium: true,
-    isFeatured: true,
-    imageUrl: 'https://images.unsplash.com/photo-1559526324-4b87b5e36e44?auto=format&fit=crop&w=600&q=80',
-    deliveryMethod: 'Instant Encrypted Portal Code',
-    terms: 'Legally issued prepaid product. Subject to Bancorp Bank user terms. Non-transferable once activated.',
-    status: 'active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'prod-002',
-    brand: 'Mastercard',
-    name: 'Mastercard Executive Virtual',
-    bin: '512345',
-    issuer: 'MetaBank, N.A.',
-    cardType: 'Virtual',
-    level: 'HQ',
-    country: 'United States',
-    currency: 'USD',
-    region: 'North America',
-    expirationPolicy: 'Valid 18 Months',
-    features: ['Instant Activation', 'Multi-currency Settlement', 'Online E-Commerce Ready'],
-    price: 260.0,
-    stock: 80,
-    isPremium: true,
-    isFeatured: true,
-    imageUrl: 'https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&w=600&q=80',
-    deliveryMethod: 'Instant Encrypted Portal Code',
-    terms: 'Legally issued virtual card. Redeemable at all worldwide Mastercard accepting merchants.',
-    status: 'active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'prod-003',
-    brand: 'Visa',
-    name: 'Visa Everyday Prepaid Card',
-    bin: '485210',
-    issuer: 'Sutton Bank',
-    cardType: 'Prepaid',
-    level: 'Standard',
-    country: 'United States',
-    currency: 'USD',
-    region: 'North America',
-    expirationPolicy: 'Valid 12 Months',
-    features: ['Standard Online Checkout', 'ATM Cash-Out Option', 'Zero Liability Protection'],
-    price: 105.0,
-    stock: 120,
-    isPremium: false,
-    isFeatured: false,
-    imageUrl: 'https://images.unsplash.com/photo-1556742049-0a670f4a4591?auto=format&fit=crop&w=600&q=80',
-    deliveryMethod: 'Digital Claim Key & Activation Guide',
-    terms: 'Legally issued prepaid card by Sutton Bank. Valid for domestic & international transactions.',
-    status: 'active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'prod-004',
-    brand: 'Apple',
-    name: 'Apple Corporate Digital Gift Card',
-    bin: 'N/A',
-    issuer: 'Apple Inc.',
-    cardType: 'Gift',
-    level: 'Standard',
-    country: 'United States',
-    currency: 'USD',
-    region: 'North America',
-    expirationPolicy: 'No Expiration',
-    features: ['Instant Digital Code', 'Never Expires', 'Valid for Apple Store & App Store'],
-    price: 198.0,
-    stock: 50,
-    isPremium: false,
-    isFeatured: true,
-    imageUrl: 'https://images.unsplash.com/photo-1526304640581-d334cdbbf45e?auto=format&fit=crop&w=600&q=80',
-    deliveryMethod: 'Instant Claim Code',
-    terms: 'Legally issued Apple e-Gift card. Redeemable directly on Apple Store.',
-    status: 'active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'prod-005',
-    brand: 'American Express',
-    name: 'AMEX Platinum Virtual Business',
-    bin: '371234',
-    issuer: 'American Express National Bank',
-    cardType: 'Virtual',
-    level: 'UHQ',
-    country: 'United States',
-    currency: 'USD',
-    region: 'North America',
-    expirationPolicy: 'Valid 36 Months',
-    features: ['Concierge Services', 'Enterprise Spend Control', '3D Secure SafeKey Enabled'],
-    price: 1035.0,
-    stock: 20,
-    isPremium: true,
-    isFeatured: true,
-    imageUrl: 'https://images.unsplash.com/photo-1589758438368-0ad531db3366?auto=format&fit=crop&w=600&q=80',
-    deliveryMethod: 'Encrypted Digital Key & Certificate',
-    terms: 'Legally issued AMEX corporate virtual payment card for business procurement.',
-    status: 'active',
-    createdAt: new Date().toISOString()
-  },
-  {
-    id: 'prod-006',
-    brand: 'Visa',
-    name: 'Visa Europe SEPA Virtual',
-    bin: '428800',
-    issuer: 'Solarisbank AG',
-    cardType: 'Virtual',
-    level: 'HQ',
-    country: 'European Union',
-    currency: 'EUR',
-    region: 'Europe',
-    expirationPolicy: 'Valid 12 Months',
-    features: ['SEPA Instant Top-up', 'EUR Currency Native', '3DS2 Verified by Visa'],
-    price: 258.0,
-    stock: 65,
-    isPremium: false,
-    isFeatured: false,
-    imageUrl: 'https://images.unsplash.com/photo-1601597111158-2fceff292cdc?auto=format&fit=crop&w=600&q=80',
-    deliveryMethod: 'Instant Digital Key',
-    terms: 'Legally issued in EU by Solarisbank AG under Visa license.',
-    status: 'active',
-    createdAt: new Date().toISOString()
-  }
-];
+// Ensure data directory exists
+if (!fs.existsSync(DATA_DIR)) {
+  fs.mkdirSync(DATA_DIR, { recursive: true });
+}
 
-const INITIAL_ANNOUNCEMENTS: Announcement[] = [
-  {
-    id: 'ann-101',
-    title: 'Welcome to the Dark-Mode Enterprise Card Portal',
-    content: 'We are pleased to launch our upgraded trading terminal layout with instant TRC20 settlement, real-time balance tracking, and corporate card inventory.',
-    category: 'Announcement',
-    isImportant: true,
-    createdAt: new Date(Date.now() - 86400000 * 2).toISOString()
-  },
-  {
-    id: 'ann-102',
-    title: 'New AMEX Platinum & Visa Corporate Inventory Added',
-    content: 'High-tier virtual cards from Bancorp Bank and American Express are now available in the Premium Cards tab with 3DS2 protection.',
-    category: 'New Product',
-    isImportant: false,
-    createdAt: new Date(Date.now() - 86400000 * 1).toISOString()
-  }
-];
+const DEFAULT_ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin.CC.adminv@gmail.com';
+const DEFAULT_ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'adminCC.adminV';
+const DEFAULT_USDT_ADDRESS = process.env.USDT_TRC20_ADDRESS || 'TG1LiM1h3iLf654gAx1msadrDf65q2AbAC';
 
-class StorageEngine {
-  private memoryData: DatabaseData = {
-    users: [],
-    products: [],
-    orders: [],
-    deposits: [],
-    tickets: [],
-    announcements: [],
-    auditLogs: [],
-    settings: DEFAULT_SETTINGS
+function getInitialData(): DatabaseSchema {
+  const salt = bcrypt.genSaltSync(10);
+  const adminHash = bcrypt.hashSync(DEFAULT_ADMIN_PASSWORD, salt);
+  const userHash = bcrypt.hashSync('password123', salt);
+
+  const initialUsers: (User & { passwordHash: string })[] = [
+    {
+      id: 'usr_admin_01',
+      email: DEFAULT_ADMIN_EMAIL.toLowerCase(),
+      fullName: 'CardVault Administrator',
+      role: 'admin',
+      createdAt: new Date('2026-01-01T00:00:00Z').toISOString(),
+      status: 'active',
+      passwordHash: adminHash,
+    },
+    {
+      id: 'usr_demo_02',
+      email: 'buyer@example.com',
+      fullName: 'Alex Reynolds',
+      role: 'user',
+      createdAt: new Date('2026-01-15T10:30:00Z').toISOString(),
+      status: 'active',
+      passwordHash: userHash,
+    },
+  ];
+
+  const initialCategories: Category[] = [
+    { id: 'cat_all', name: 'All', slug: 'all', description: 'All available cards', active: true },
+    { id: 'cat_std', name: 'Standard', slug: 'standard', description: 'Standard quality cards ($25 - $100)', active: true },
+    { id: 'cat_hq', name: 'HQ', slug: 'hq', description: 'High Quality (HQ) high-balance verified cards', active: true },
+    { id: 'cat_uhq', name: 'UHQ', slug: 'uhq', description: 'Ultra High Quality (UHQ) top-tier instant balance cards', active: true },
+    { id: 'cat_visa', name: 'Visa', slug: 'visa', description: 'Visa cards for worldwide use', active: true },
+    { id: 'cat_mc', name: 'Mastercard', slug: 'mastercard', description: 'Mastercard cards for global shopping', active: true },
+    { id: 'cat_amex', name: 'American Express', slug: 'american-express', description: 'American Express cards', active: true },
+  ];
+
+  const initialProducts: Product[] = [
+    {
+      id: 'prod_visa_100',
+      name: 'Visa Prepaid $100',
+      brand: 'Visa',
+      category: 'Standard',
+      cardType: 'Standard',
+      value: 100,
+      price: 95,
+      region: 'US',
+      image: '/cards/visa-100.png',
+      description: 'Standard Visa Prepaid Card loaded with $100 USD value. Accepted anywhere Visa debit cards are accepted in the United States and online. Includes secure reference delivery upon verified payment.',
+      terms: 'Non-reloadable prepaid card. Valid for 24 months from activation. Instant digital issuance of card reference voucher upon payment approval.',
+      availability: 'in_stock',
+      stockCount: 85,
+      seller: 'CardVault Official',
+      rating: 4.9,
+      ratingCount: 342,
+      featured: true,
+      createdAt: new Date('2026-01-01T00:00:00Z').toISOString(),
+    },
+    {
+      id: 'prod_visa_50',
+      name: 'Visa Prepaid $50',
+      brand: 'Visa',
+      category: 'Standard',
+      cardType: 'Standard',
+      value: 50,
+      price: 48,
+      region: 'US',
+      image: '/cards/visa-50.png',
+      description: 'Standard Visa Prepaid card pre-funded with $50. Perfect for small online purchases, software subscriptions, and secure shopping.',
+      terms: 'Usable online and in-store across US merchant terminals. Instant reference code delivery.',
+      availability: 'in_stock',
+      stockCount: 120,
+      seller: 'CardVault Official',
+      rating: 4.8,
+      ratingCount: 215,
+      featured: false,
+      createdAt: new Date('2026-01-02T00:00:00Z').toISOString(),
+    },
+    {
+      id: 'prod_mc_250',
+      name: 'Mastercard HQ Prepaid $250',
+      brand: 'Mastercard',
+      category: 'HQ',
+      cardType: 'HQ',
+      value: 250,
+      price: 235,
+      region: 'US',
+      image: '/cards/mastercard-250.png',
+      description: 'HQ High Quality Mastercard Prepaid card with $250 USD value. Global acceptance for travel, hotel reservations, and high-value online transactions.',
+      terms: 'Zero monthly fees for the first 12 months. Delivered with unique digital voucher reference.',
+      availability: 'in_stock',
+      stockCount: 42,
+      seller: 'CardVault Official',
+      rating: 4.9,
+      ratingCount: 189,
+      featured: true,
+      createdAt: new Date('2026-01-03T00:00:00Z').toISOString(),
+    },
+    {
+      id: 'prod_mc_100',
+      name: 'Mastercard Standard $100',
+      brand: 'Mastercard',
+      category: 'Standard',
+      cardType: 'Standard',
+      value: 100,
+      price: 95,
+      region: 'US',
+      image: '/cards/mastercard-100.png',
+      description: 'Mastercard Prepaid card with $100 USD credit. Fast delivery, widely accepted worldwide at millions of online merchants.',
+      terms: 'Standard digital card reference. No verification delays once USDT TRC20 payment is verified.',
+      availability: 'in_stock',
+      stockCount: 65,
+      seller: 'CardVault Official',
+      rating: 4.8,
+      ratingCount: 164,
+      featured: false,
+      createdAt: new Date('2026-01-04T00:00:00Z').toISOString(),
+    },
+    {
+      id: 'prod_amex_50',
+      name: 'American Express Standard $50',
+      brand: 'American Express',
+      category: 'Standard',
+      cardType: 'Standard',
+      value: 50,
+      price: 48,
+      region: 'US',
+      image: '/cards/amex-50.png',
+      description: 'American Express Gift Card with $50 value. Usable virtually everywhere American Express cards are accepted in the US.',
+      terms: 'Funds do not expire. Issued via secure encrypted voucher token upon payment settlement.',
+      availability: 'in_stock',
+      stockCount: 50,
+      seller: 'CardVault Official',
+      rating: 4.8,
+      ratingCount: 98,
+      featured: true,
+      createdAt: new Date('2026-01-05T00:00:00Z').toISOString(),
+    },
+    {
+      id: 'prod_amex_100',
+      name: 'American Express HQ $100',
+      brand: 'American Express',
+      category: 'HQ',
+      cardType: 'HQ',
+      value: 100,
+      price: 94,
+      region: 'US',
+      image: '/cards/amex-100.png',
+      description: 'American Express HQ $100 denomination card. Ideal for retail stores, electronics, and digital payments.',
+      terms: 'Pre-activated balance. Ready for immediate use once order is approved.',
+      availability: 'in_stock',
+      stockCount: 77,
+      seller: 'CardVault Official',
+      rating: 4.9,
+      ratingCount: 220,
+      featured: false,
+      createdAt: new Date('2026-01-06T00:00:00Z').toISOString(),
+    },
+    {
+      id: 'prod_visa_500',
+      name: 'Visa UHQ Prepaid $500',
+      brand: 'Visa',
+      category: 'UHQ',
+      cardType: 'UHQ',
+      value: 500,
+      price: 470,
+      region: 'Global',
+      image: '/cards/visa-500.png',
+      description: 'Ultra High Quality (UHQ) Visa card loaded with $500. High spending limits, global 3D-secure enabled merchant compatibility.',
+      terms: 'UHQ tier allocation. Fast priority verification for payments exceeding 400 USDT.',
+      availability: 'in_stock',
+      stockCount: 25,
+      seller: 'CardVault Prime',
+      rating: 5.0,
+      ratingCount: 112,
+      featured: true,
+      createdAt: new Date('2026-01-07T00:00:00Z').toISOString(),
+    },
+    {
+      id: 'prod_mc_500',
+      name: 'Mastercard UHQ Prepaid $500',
+      brand: 'Mastercard',
+      category: 'UHQ',
+      cardType: 'UHQ',
+      value: 500,
+      price: 465,
+      region: 'Global',
+      image: '/cards/mastercard-500.png',
+      description: 'Mastercard UHQ prepaid voucher with $500 total purchasing capacity. Unrestricted cross-border purchases.',
+      terms: 'Global region enabled. Secure delivery reference code provided on approval.',
+      availability: 'in_stock',
+      stockCount: 30,
+      seller: 'CardVault Prime',
+      rating: 4.9,
+      ratingCount: 95,
+      featured: false,
+      createdAt: new Date('2026-01-08T00:00:00Z').toISOString(),
+    },
+    {
+      id: 'prod_amex_200',
+      name: 'American Express HQ $200',
+      brand: 'American Express',
+      category: 'HQ',
+      cardType: 'HQ',
+      value: 200,
+      price: 188,
+      region: 'US',
+      image: '/cards/amex-200.png',
+      description: 'American Express HQ card loaded with $200 USD. Suitable for airline bookings, luxury dining, and retail checkout.',
+      terms: 'Valid at US merchants accepting American Express. No maintenance fees.',
+      availability: 'in_stock',
+      stockCount: 40,
+      seller: 'CardVault Official',
+      rating: 4.9,
+      ratingCount: 140,
+      featured: false,
+      createdAt: new Date('2026-01-09T00:00:00Z').toISOString(),
+    },
+    {
+      id: 'prod_visa_uhq_1000',
+      name: 'Visa UHQ Elite $1000',
+      brand: 'Visa',
+      category: 'UHQ',
+      cardType: 'UHQ',
+      value: 1000,
+      price: 920,
+      region: 'Global',
+      image: '/cards/visa-1000.png',
+      description: 'Top-tier UHQ Ultra High Quality Visa Card loaded with $1000 USD balance. Instant priority activation and maximum spending limits.',
+      terms: 'UHQ Priority allocation. Immediate dispatch of digital reference token upon payment confirmation.',
+      availability: 'in_stock',
+      stockCount: 15,
+      seller: 'CardVault Prime',
+      rating: 5.0,
+      ratingCount: 88,
+      featured: true,
+      createdAt: new Date('2026-01-10T00:00:00Z').toISOString(),
+    },
+    {
+      id: 'prod_gift_visa_25',
+      name: 'Visa Standard $25',
+      brand: 'Visa',
+      category: 'Standard',
+      cardType: 'Standard',
+      value: 25,
+      price: 24,
+      region: 'Global',
+      image: '/cards/visa-25.png',
+      description: 'Standard balance Visa card for everyday gaming, in-app purchases, and micro-subscriptions.',
+      terms: 'Digital voucher reference code. Instant fulfillment.',
+      availability: 'in_stock',
+      stockCount: 200,
+      seller: 'CardVault Official',
+      rating: 4.7,
+      ratingCount: 410,
+      featured: false,
+      createdAt: new Date('2026-01-10T00:00:00Z').toISOString(),
+    },
+    {
+      id: 'prod_gift_mc_75',
+      name: 'Mastercard Standard $75',
+      brand: 'Mastercard',
+      category: 'Standard',
+      cardType: 'Standard',
+      value: 75,
+      price: 71,
+      region: 'US',
+      image: '/cards/mastercard-75.png',
+      description: 'Mastercard card pre-loaded with $75. Great balance size for retail fashion, tech gear, and streaming services.',
+      terms: 'Issued as authenticated voucher reference. Valid nationwide.',
+      availability: 'in_stock',
+      stockCount: 88,
+      seller: 'CardVault Official',
+      rating: 4.8,
+      ratingCount: 155,
+      featured: false,
+      createdAt: new Date('2026-01-11T00:00:00Z').toISOString(),
+    }
+  ];
+
+  const initialInventory: InventoryReference[] = [
+    { id: 'inv_01', productId: 'prod_visa_100', productName: 'Visa Prepaid $100', tokenReference: 'CV-V100-REF-892401-US', isAssigned: true, orderId: 'ORD-98241', assignedAt: '2026-02-10T14:30:00Z', createdAt: '2026-01-01T00:00:00Z' },
+    { id: 'inv_02', productId: 'prod_visa_100', productName: 'Visa Prepaid $100', tokenReference: 'CV-V100-REF-892402-US', isAssigned: false, createdAt: '2026-01-01T00:00:00Z' },
+    { id: 'inv_03', productId: 'prod_visa_100', productName: 'Visa Prepaid $100', tokenReference: 'CV-V100-REF-892403-US', isAssigned: false, createdAt: '2026-01-01T00:00:00Z' },
+    { id: 'inv_04', productId: 'prod_mc_250', productName: 'Mastercard Prepaid $250', tokenReference: 'CV-MC250-REF-712390-US', isAssigned: false, createdAt: '2026-01-01T00:00:00Z' },
+    { id: 'inv_05', productId: 'prod_mc_250', productName: 'Mastercard Prepaid $250', tokenReference: 'CV-MC250-REF-712391-US', isAssigned: false, createdAt: '2026-01-01T00:00:00Z' },
+    { id: 'inv_06', productId: 'prod_amex_50', productName: 'American Express Gift Card $50', tokenReference: 'CV-AM50-REF-349811-US', isAssigned: false, createdAt: '2026-01-01T00:00:00Z' },
+    { id: 'inv_07', productId: 'prod_visa_500', productName: 'Visa Premium Prepaid $500', tokenReference: 'CV-V500-REF-190422-GL', isAssigned: false, createdAt: '2026-01-01T00:00:00Z' },
+    { id: 'inv_08', productId: 'prod_amex_100', productName: 'American Express Gift Card $100', tokenReference: 'CV-AM100-REF-551982-US', isAssigned: false, createdAt: '2026-01-01T00:00:00Z' }
+  ];
+
+  const initialOrders: Order[] = [
+    {
+      id: 'ORD-98241',
+      userId: 'usr_demo_02',
+      userEmail: 'buyer@example.com',
+      userName: 'Alex Reynolds',
+      items: [
+        {
+          productId: 'prod_visa_100',
+          name: 'Visa Prepaid $100',
+          brand: 'Visa',
+          cardType: 'Standard',
+          value: 100,
+          price: 95,
+          quantity: 1,
+          image: '/cards/visa-100.png',
+          region: 'US'
+        }
+      ],
+      totalUSD: 95,
+      totalUSDT: 95,
+      paymentMethod: 'USDT_TRC20',
+      paymentAddress: DEFAULT_USDT_ADDRESS,
+      paymentStatus: 'Completed',
+      orderStatus: 'Completed',
+      transactionHash: 'b4a8e5792c8172901cfba982410a83e0984cfb7218ea0294871908234cb012a9',
+      txSubmittedAt: '2026-02-10T14:15:00Z',
+      approvedAt: '2026-02-10T14:30:00Z',
+      createdAt: '2026-02-10T14:00:00Z',
+      updatedAt: '2026-02-10T14:30:00Z',
+      deliveredCards: [
+        {
+          id: 'card_demo_01',
+          cardName: 'Visa Prepaid $100',
+          brand: 'Visa',
+          cardNumber: '4532890123456789',
+          expiryDate: '09/28',
+          cvv: '638',
+          cardHolder: 'Alex Reynolds',
+          pin: '4419',
+          balance: 100,
+          notes: 'US Billing Zip: 90210'
+        }
+      ],
+      deliveryNotes: 'Your Visa $100 prepaid card is activated and ready for use.',
+      customerNotes: 'Please process fast'
+    },
+    {
+      id: 'ORD-98284',
+      userId: 'usr_demo_02',
+      userEmail: 'buyer@example.com',
+      userName: 'Alex Reynolds',
+      items: [
+        {
+          productId: 'prod_mc_250',
+          name: 'Mastercard Prepaid $250',
+          brand: 'Mastercard',
+          cardType: 'Premium',
+          value: 250,
+          price: 235,
+          quantity: 1,
+          image: '/cards/mastercard-250.png',
+          region: 'US'
+        }
+      ],
+      totalUSD: 235,
+      totalUSDT: 235,
+      paymentMethod: 'USDT_TRC20',
+      paymentAddress: DEFAULT_USDT_ADDRESS,
+      paymentStatus: 'Pending Verification',
+      orderStatus: 'Processing',
+      transactionHash: '8f0923cb910948ac0192834baf571029384bc19028374619028374619028374a',
+      txSubmittedAt: '2026-02-12T18:40:00Z',
+      createdAt: '2026-02-12T18:30:00Z',
+      updatedAt: '2026-02-12T18:40:00Z',
+      customerNotes: 'Sent 235 USDT via Tronlink wallet'
+    }
+  ];
+
+  const initialSettings: SiteSettings = {
+    storeName: 'CardVault',
+    usdtTrc20Address: DEFAULT_USDT_ADDRESS,
+    paymentInstructions: 'Send the exact USDT amount to the TRC20 wallet address below. Once your transaction is confirmed on the TRON network, copy the TXID (transaction hash) and paste it into the verification box to complete your order.',
+    supportEmail: 'support@cardvault.io',
+    telegramSupport: '@CardVaultSupport',
+    exchangeRateUsdt: 1.0,
+    minConfirmationBlocks: 1,
   };
 
+  return {
+    users: initialUsers,
+    products: initialProducts,
+    categories: initialCategories,
+    orders: initialOrders,
+    inventory: initialInventory,
+    settings: initialSettings,
+  };
+}
+
+class Database {
+  private data: DatabaseSchema;
+
   constructor() {
-    this.init();
+    this.data = this.loadData();
   }
 
-  private async init() {
+  private loadData(): DatabaseSchema {
     try {
-      if (!fs.existsSync(DATA_DIR)) {
-        fs.mkdirSync(DATA_DIR, { recursive: true });
-      }
-
       if (fs.existsSync(DB_FILE)) {
         const raw = fs.readFileSync(DB_FILE, 'utf-8');
-        this.memoryData = JSON.parse(raw);
-        await this.ensureAdminAccount();
-      } else {
-        await this.seedInitialData();
+        const parsed = JSON.parse(raw);
+        if (parsed.users && parsed.products && parsed.settings) {
+          return parsed;
+        }
       }
     } catch (err) {
-      console.error('Failed to load database, resetting cache:', err);
-      await this.seedInitialData();
+      console.error('Error loading database, resetting to defaults:', err);
     }
+    const initial = getInitialData();
+    this.saveData(initial);
+    return initial;
   }
 
-  private async ensureAdminAccount() {
-    const adminEmail = 'admin.CC.adminv@gmail.com';
-    const adminPassword = 'adminCC.adminV';
-    const passwordHash = await bcrypt.hash(adminPassword, 10);
-
-    const existingAdmin = this.memoryData.users.find(u => u.email.toLowerCase() === adminEmail.toLowerCase());
-    if (existingAdmin) {
-      existingAdmin.role = 'admin';
-      existingAdmin.passwordHash = passwordHash;
-      existingAdmin.mustChangePassword = false;
-    } else {
-      this.memoryData.users.unshift({
-        id: 'usr-admin-01',
-        fullName: 'System Administrator',
-        email: adminEmail.toLowerCase(),
-        passwordHash,
-        role: 'admin',
-        balance: 10000.0,
-        mustChangePassword: false,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      });
-    }
-
-    if (!this.memoryData.settings) {
-      this.memoryData.settings = { ...DEFAULT_SETTINGS };
-    } else {
-      this.memoryData.settings.trc20WalletAddress = 'TG1LiM1h3iLf654gAx1msadrDf65q2AbAC';
-    }
-
-    // Ensure Amazon is removed from brands/products
-    if (this.memoryData.products) {
-      this.memoryData.products = this.memoryData.products.filter(
-        p => p.brand.toLowerCase() !== 'amazon' && !p.name.toLowerCase().includes('amazon')
-      );
-    }
-
-    this.saveSync();
-  }
-
-  private async seedInitialData() {
-    const adminEmail = 'admin.CC.adminv@gmail.com';
-    const adminPassword = 'adminCC.adminV';
-    const passwordHash = await bcrypt.hash(adminPassword, 10);
-
-    const initialAdmin: User & { passwordHash: string } = {
-      id: 'usr-admin-01',
-      fullName: 'System Administrator',
-      email: adminEmail.toLowerCase(),
-      passwordHash,
-      role: 'admin',
-      balance: 10000.0,
-      mustChangePassword: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    // Also seed a demo user for testing
-    const demoPasswordHash = await bcrypt.hash('DemoUser123!', 10);
-    const demoUser: User & { passwordHash: string } = {
-      id: 'usr-demo-01',
-      fullName: 'Enterprise Client',
-      email: 'client@enterprise.com',
-      passwordHash: demoPasswordHash,
-      role: 'user',
-      balance: 1250.0,
-      mustChangePassword: false,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-
-    this.memoryData = {
-      users: [initialAdmin, demoUser],
-      products: INITIAL_PRODUCTS,
-      orders: [
-        {
-          id: 'ORD-109283',
-          userId: demoUser.id,
-          userEmail: demoUser.email,
-          productId: 'prod-001',
-          productName: 'Visa Business Virtual Prepaid',
-          productBrand: 'Visa',
-          productType: 'Virtual',
-          cardValue: 500.0,
-          amount: 520.0,
-          quantity: 1,
-          paymentStatus: 'paid',
-          deliveryStatus: 'delivered',
-          txHash: '7f91a2e38c4b501d2938a4c1209e8f7a6b5c4d3e2f109283746554321a987b6c',
-          fulfillmentData: {
-            claimCode: 'CLAIM-VBP-9982-3819-2026',
-            instructions: 'Access portal claim key and redeem card balance directly with Bancorp Bank Virtual portal.'
-          },
-          createdAt: new Date(Date.now() - 86400000).toISOString(),
-          updatedAt: new Date(Date.now() - 86400000).toISOString()
-        }
-      ],
-      deposits: [
-        {
-          id: 'DEP-883019',
-          userId: demoUser.id,
-          userEmail: demoUser.email,
-          amount: 1500.0,
-          network: 'TRC20',
-          walletAddress: DEFAULT_SETTINGS.trc20WalletAddress,
-          txHash: '3a12b34c56d78e90f123456789abcdef0123456789abcdef0123456789abcdef',
-          status: 'approved',
-          createdAt: new Date(Date.now() - 172800000).toISOString(),
-          updatedAt: new Date(Date.now() - 172800000).toISOString()
-        }
-      ],
-      tickets: [
-        {
-          id: 'TCK-4001',
-          userId: demoUser.id,
-          userName: demoUser.fullName,
-          userEmail: demoUser.email,
-          subject: 'Corporate API & Bulk Card Order Inquiry',
-          status: 'open',
-          createdAt: new Date(Date.now() - 43200000).toISOString(),
-          updatedAt: new Date(Date.now() - 3600000).toISOString(),
-          messages: [
-            {
-              id: 'msg-01',
-              senderId: demoUser.id,
-              senderName: demoUser.fullName,
-              senderRole: 'user',
-              content: 'Hello Support, we are interested in placing a bulk order for 20 Visa Business Virtual cards next week. Is there volume discount available?',
-              timestamp: new Date(Date.now() - 43200000).toISOString()
-            },
-            {
-              id: 'msg-02',
-              senderId: initialAdmin.id,
-              senderName: initialAdmin.fullName,
-              senderRole: 'admin',
-              content: 'Hello! Yes, bulk corporate purchases above $10,000 receive a 2.5% discount on issuance fees. Please submit a deposit via TRC20 and notify us.',
-              timestamp: new Date(Date.now() - 3600000).toISOString()
-            }
-          ]
-        }
-      ],
-      announcements: INITIAL_ANNOUNCEMENTS,
-      auditLogs: [
-        {
-          id: 'log-01',
-          adminEmail: initialAdmin.email,
-          action: 'SYSTEM_INITIALIZATION',
-          details: 'Initial secure administrator account seeded.',
-          timestamp: new Date().toISOString()
-        }
-      ],
-      settings: DEFAULT_SETTINGS
-    };
-
-    this.saveSync();
-  }
-
-  private saveSync() {
+  private saveData(data: DatabaseSchema) {
     try {
-      const tempPath = `${DB_FILE}.tmp`;
-      fs.writeFileSync(tempPath, JSON.stringify(this.memoryData, null, 2));
-      fs.renameSync(tempPath, DB_FILE);
+      fs.writeFileSync(DB_FILE, JSON.stringify(data, null, 2), 'utf-8');
     } catch (err) {
-      console.error('Failed to save marketplace data atomically:', err);
+      console.error('Failed to write database to disk:', err);
     }
+  }
+
+  private save() {
+    this.saveData(this.data);
   }
 
   // Users
-  public getUsers(): Array<User & { passwordHash: string }> {
-    return this.memoryData.users;
+  getUsers() {
+    return this.data.users.map(({ passwordHash, ...user }) => user);
   }
 
-  public findUserByEmail(email: string): (User & { passwordHash: string }) | undefined {
-    return this.memoryData.users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  findUserByEmail(email: string) {
+    return this.data.users.find(u => u.email.toLowerCase() === email.toLowerCase());
   }
 
-  public findUserById(id: string): (User & { passwordHash: string }) | undefined {
-    return this.memoryData.users.find(u => u.id === id);
+  findUserById(id: string) {
+    const u = this.data.users.find(u => u.id === id);
+    if (!u) return null;
+    const { passwordHash, ...safeUser } = u;
+    return safeUser;
   }
 
-  public createUser(user: User & { passwordHash: string }) {
-    this.memoryData.users.push(user);
-    this.saveSync();
+  createUser(user: User & { passwordHash: string }) {
+    this.data.users.push(user);
+    this.save();
+    const { passwordHash, ...safeUser } = user;
+    return safeUser;
   }
 
-  public updateUser(id: string, updates: Partial<User & { passwordHash: string }>) {
-    const idx = this.memoryData.users.findIndex(u => u.id === id);
-    if (idx !== -1) {
-      this.memoryData.users[idx] = { ...this.memoryData.users[idx], ...updates, updatedAt: new Date().toISOString() };
-      this.saveSync();
-      return this.memoryData.users[idx];
+  updateUserStatus(id: string, status: 'active' | 'disabled') {
+    const user = this.data.users.find(u => u.id === id);
+    if (user) {
+      user.status = status;
+      this.save();
+      return true;
     }
-    return null;
+    return false;
   }
 
   // Products
-  public getProducts(): CardProduct[] {
-    return this.memoryData.products;
+  getProducts(filters?: { category?: string; search?: string; brand?: string }) {
+    let result = [...this.data.products];
+    if (filters?.category && filters.category !== 'All') {
+      const catLower = filters.category.toLowerCase();
+      result = result.filter(p => 
+        p.category.toLowerCase() === catLower ||
+        p.brand.toLowerCase() === catLower ||
+        p.cardType.toLowerCase() === catLower
+      );
+    }
+    if (filters?.brand && filters.brand !== 'All') {
+      result = result.filter(p => p.brand.toLowerCase() === filters.brand?.toLowerCase());
+    }
+    if (filters?.search && filters.search.trim()) {
+      const q = filters.search.toLowerCase().trim();
+      result = result.filter(p => 
+        p.name.toLowerCase().includes(q) ||
+        p.brand.toLowerCase().includes(q) ||
+        p.category.toLowerCase().includes(q) ||
+        p.region.toLowerCase().includes(q) ||
+        p.description.toLowerCase().includes(q)
+      );
+    }
+    return result;
   }
 
-  public findProductById(id: string): CardProduct | undefined {
-    return this.memoryData.products.find(p => p.id === id);
+  getProductById(id: string) {
+    return this.data.products.find(p => p.id === id) || null;
   }
 
-  public createProduct(product: CardProduct) {
-    this.memoryData.products.unshift(product);
-    this.saveSync();
+  createProduct(product: Product) {
+    this.data.products.unshift(product);
+    this.save();
     return product;
   }
 
-  public updateProduct(id: string, updates: Partial<CardProduct>) {
-    const idx = this.memoryData.products.findIndex(p => p.id === id);
-    if (idx !== -1) {
-      this.memoryData.products[idx] = { ...this.memoryData.products[idx], ...updates };
-      this.saveSync();
-      return this.memoryData.products[idx];
+  updateProduct(id: string, updates: Partial<Product>) {
+    const index = this.data.products.findIndex(p => p.id === id);
+    if (index !== -1) {
+      this.data.products[index] = { ...this.data.products[index], ...updates };
+      this.save();
+      return this.data.products[index];
     }
     return null;
   }
 
-  public deleteProduct(id: string) {
-    this.memoryData.products = this.memoryData.products.filter(p => p.id !== id);
-    this.saveSync();
+  deleteProduct(id: string) {
+    const initialLen = this.data.products.length;
+    this.data.products = this.data.products.filter(p => p.id !== id);
+    this.save();
+    return this.data.products.length < initialLen;
+  }
+
+  // Categories
+  getCategories() {
+    return this.data.categories;
+  }
+
+  createCategory(category: Category) {
+    this.data.categories.push(category);
+    this.save();
+    return category;
+  }
+
+  deleteCategory(id: string) {
+    this.data.categories = this.data.categories.filter(c => c.id !== id);
+    this.save();
+    return true;
   }
 
   // Orders
-  public getOrders(): Order[] {
-    return this.memoryData.orders;
+  getOrders(filters?: { userId?: string; status?: string; search?: string }) {
+    let result = [...this.data.orders];
+    if (filters?.userId) {
+      result = result.filter(o => o.userId === filters.userId);
+    }
+    if (filters?.status && filters.status !== 'All') {
+      result = result.filter(o => o.paymentStatus === filters.status || o.orderStatus === filters.status);
+    }
+    if (filters?.search && filters.search.trim()) {
+      const q = filters.search.toLowerCase().trim();
+      result = result.filter(o => 
+        o.id.toLowerCase().includes(q) ||
+        o.userEmail.toLowerCase().includes(q) ||
+        (o.transactionHash && o.transactionHash.toLowerCase().includes(q))
+      );
+    }
+    return result.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   }
 
-  public getOrdersByUserId(userId: string): Order[] {
-    return this.memoryData.orders.filter(o => o.userId === userId);
+  getOrderById(id: string) {
+    return this.data.orders.find(o => o.id === id) || null;
   }
 
-  public findOrderById(id: string): Order | undefined {
-    return this.memoryData.orders.find(o => o.id === id);
-  }
-
-  public createOrder(order: Order) {
-    this.memoryData.orders.unshift(order);
-    this.saveSync();
+  createOrder(order: Order) {
+    this.data.orders.unshift(order);
+    this.save();
     return order;
   }
 
-  public updateOrder(id: string, updates: Partial<Order>) {
-    const idx = this.memoryData.orders.findIndex(o => o.id === id);
-    if (idx !== -1) {
-      this.memoryData.orders[idx] = { ...this.memoryData.orders[idx], ...updates, updatedAt: new Date().toISOString() };
-      this.saveSync();
-      return this.memoryData.orders[idx];
+  submitTransactionHash(orderId: string, txHash: string) {
+    const order = this.data.orders.find(o => o.id === orderId);
+    if (!order) return null;
+    order.transactionHash = txHash.trim();
+    order.paymentStatus = 'Pending Verification';
+    order.orderStatus = 'Processing';
+    order.txSubmittedAt = new Date().toISOString();
+    order.updatedAt = new Date().toISOString();
+    this.save();
+    return order;
+  }
+
+  approveOrderPayment(orderId: string, options?: { deliveredCards?: any[]; deliveryNotes?: string }) {
+    const order = this.data.orders.find(o => o.id === orderId);
+    if (!order) return null;
+    
+    order.paymentStatus = 'Paid';
+    order.orderStatus = 'Completed';
+    order.approvedAt = new Date().toISOString();
+    order.updatedAt = new Date().toISOString();
+    
+    if (options?.deliveryNotes) {
+      order.deliveryNotes = options.deliveryNotes.trim();
     }
-    return null;
-  }
 
-  // Deposits
-  public getDeposits(): Deposit[] {
-    return this.memoryData.deposits;
-  }
-
-  public getDepositsByUserId(userId: string): Deposit[] {
-    return this.memoryData.deposits.filter(d => d.userId === userId);
-  }
-
-  public findDepositById(id: string): Deposit | undefined {
-    return this.memoryData.deposits.find(d => d.id === id);
-  }
-
-  public createDeposit(deposit: Deposit) {
-    this.memoryData.deposits.unshift(deposit);
-    this.saveSync();
-    return deposit;
-  }
-
-  public updateDeposit(id: string, updates: Partial<Deposit>) {
-    const idx = this.memoryData.deposits.findIndex(d => d.id === id);
-    if (idx !== -1) {
-      this.memoryData.deposits[idx] = { ...this.memoryData.deposits[idx], ...updates, updatedAt: new Date().toISOString() };
-      this.saveSync();
-      return this.memoryData.deposits[idx];
+    if (options?.deliveredCards && Array.isArray(options.deliveredCards) && options.deliveredCards.length > 0) {
+      order.deliveredCards = options.deliveredCards.map(c => ({
+        id: c.id || 'card_' + Math.random().toString(36).substring(2, 9),
+        cardName: c.cardName || '',
+        brand: c.brand || 'Visa',
+        cardNumber: (c.cardNumber || '').trim(),
+        expiryDate: (c.expiryDate || '').trim(),
+        cvv: (c.cvv || '').trim(),
+        cardHolder: (c.cardHolder || '').trim(),
+        pin: (c.pin || '').trim(),
+        balance: typeof c.balance === 'number' ? c.balance : undefined,
+        notes: (c.notes || '').trim()
+      }));
     }
-    return null;
+
+    // Assign inventory reference tokens for each item
+    const deliveredTokens: string[] = [];
+    order.items.forEach(item => {
+      for (let i = 0; i < item.quantity; i++) {
+        // Find unassigned token or generate secure voucher reference
+        const availableInv = this.data.inventory.find(inv => inv.productId === item.productId && !inv.isAssigned);
+        if (availableInv) {
+          availableInv.isAssigned = true;
+          availableInv.orderId = order.id;
+          availableInv.assignedAt = new Date().toISOString();
+          deliveredTokens.push(availableInv.tokenReference);
+        } else {
+          // Generate legitimate voucher token
+          const token = `CV-${item.brand.substring(0, 2).toUpperCase()}${item.value}-REF-${Math.random().toString(36).substring(2, 8).toUpperCase()}-${item.region}`;
+          this.data.inventory.push({
+            id: 'inv_' + Math.random().toString(36).substring(2, 9),
+            productId: item.productId,
+            productName: item.name,
+            tokenReference: token,
+            isAssigned: true,
+            orderId: order.id,
+            assignedAt: new Date().toISOString(),
+            createdAt: new Date().toISOString()
+          });
+          deliveredTokens.push(token);
+        }
+      }
+    });
+
+    order.deliveryTokens = deliveredTokens;
+    this.save();
+    return order;
   }
 
-  // Tickets
-  public getTickets(): SupportTicket[] {
-    return this.memoryData.tickets;
+  rejectOrderPayment(orderId: string, reason: string) {
+    const order = this.data.orders.find(o => o.id === orderId);
+    if (!order) return null;
+    order.paymentStatus = 'Rejected';
+    order.orderStatus = 'Cancelled';
+    order.rejectedAt = new Date().toISOString();
+    order.rejectionReason = reason;
+    order.updatedAt = new Date().toISOString();
+    this.save();
+    return order;
   }
 
-  public getTicketsByUserId(userId: string): SupportTicket[] {
-    return this.memoryData.tickets.filter(t => t.userId === userId);
+  updateOrderStatus(orderId: string, status: { paymentStatus?: any; orderStatus?: any }) {
+    const order = this.data.orders.find(o => o.id === orderId);
+    if (!order) return null;
+    if (status.paymentStatus) order.paymentStatus = status.paymentStatus;
+    if (status.orderStatus) order.orderStatus = status.orderStatus;
+    order.updatedAt = new Date().toISOString();
+    this.save();
+    return order;
   }
 
-  public findTicketById(id: string): SupportTicket | undefined {
-    return this.memoryData.tickets.find(t => t.id === id);
+  // Inventory
+  getInventory() {
+    return this.data.inventory;
   }
 
-  public createTicket(ticket: SupportTicket) {
-    this.memoryData.tickets.unshift(ticket);
-    this.saveSync();
-    return ticket;
-  }
-
-  public addMessageToTicket(ticketId: string, message: SupportTicket['messages'][0]) {
-    const ticket = this.findTicketById(ticketId);
-    if (ticket) {
-      ticket.messages.push(message);
-      ticket.updatedAt = new Date().toISOString();
-      this.saveSync();
-      return ticket;
-    }
-    return null;
-  }
-
-  // Announcements
-  public getAnnouncements(): Announcement[] {
-    return this.memoryData.announcements;
-  }
-
-  public createAnnouncement(ann: Announcement) {
-    this.memoryData.announcements.unshift(ann);
-    this.saveSync();
-    return ann;
-  }
-
-  public deleteAnnouncement(id: string) {
-    this.memoryData.announcements = this.memoryData.announcements.filter(a => a.id !== id);
-    this.saveSync();
-  }
-
-  // Audit Logs
-  public getAuditLogs(): AuditLog[] {
-    return this.memoryData.auditLogs;
-  }
-
-  public addAuditLog(log: AuditLog) {
-    this.memoryData.auditLogs.unshift(log);
-    this.saveSync();
+  addInventoryTokens(tokens: { productId: string; productName: string; tokenReference: string }[]) {
+    tokens.forEach(t => {
+      this.data.inventory.push({
+        id: 'inv_' + Math.random().toString(36).substring(2, 9),
+        productId: t.productId,
+        productName: t.productName,
+        tokenReference: t.tokenReference,
+        isAssigned: false,
+        createdAt: new Date().toISOString()
+      });
+    });
+    this.save();
+    return true;
   }
 
   // Settings
-  public getSettings(): SiteSettings {
-    return this.memoryData.settings;
+  getSettings() {
+    return this.data.settings;
   }
 
-  public updateSettings(settings: Partial<SiteSettings>) {
-    this.memoryData.settings = { ...this.memoryData.settings, ...settings };
-    this.saveSync();
-    return this.memoryData.settings;
+  updateSettings(updates: Partial<SiteSettings>) {
+    this.data.settings = { ...this.data.settings, ...updates };
+    this.save();
+    return this.data.settings;
+  }
+
+  // Admin stats
+  getAdminStats() {
+    const totalOrders = this.data.orders.length;
+    const completedOrders = this.data.orders.filter(o => o.orderStatus === 'Completed' || o.paymentStatus === 'Paid' || o.paymentStatus === 'Completed').length;
+    const pendingPayments = this.data.orders.filter(o => o.paymentStatus === 'Pending Verification' || o.paymentStatus === 'Payment Submitted').length;
+    const totalRevenue = this.data.orders
+      .filter(o => o.paymentStatus === 'Paid' || o.paymentStatus === 'Completed')
+      .reduce((sum, o) => sum + (o.totalUSD || 0), 0);
+    const activeProducts = this.data.products.filter(p => p.availability !== 'out_of_stock').length;
+    const totalUsers = this.data.users.length;
+
+    return {
+      totalRevenue,
+      totalOrders,
+      pendingPayments,
+      activeProducts,
+      totalUsers,
+      completedOrders
+    };
   }
 }
 
-export const db = new StorageEngine();
+export const db = new Database();

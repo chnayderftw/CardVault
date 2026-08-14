@@ -1,154 +1,148 @@
-export type UserRole = 'user' | 'admin';
+export type CardBrand = 'Visa' | 'Mastercard' | 'American Express' | 'Other';
+export type CardType = 'Standard' | 'HQ' | 'UHQ' | 'Premium' | 'Virtual' | 'Physical';
+export type ProductCategory = 'All' | 'Standard' | 'HQ' | 'UHQ' | 'Visa' | 'Mastercard' | 'American Express';
+export type CardAvailability = 'in_stock' | 'low_stock' | 'out_of_stock';
 
-export interface User {
+export interface Product {
   id: string;
-  fullName: string;
-  email: string;
-  role: UserRole;
-  balance: number;
-  mustChangePassword?: boolean;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type CardType = 'Prepaid' | 'Virtual' | 'Gift' | 'Debit';
-export type CardLevel = 'Standard' | 'HQ' | 'UHQ';
-
-export interface CardProduct {
-  id: string;
-  brand: string; // e.g. Visa, Mastercard, Amazon
   name: string;
-  bin: string; // 6-digit BIN e.g. 411111
-  issuer: string; // e.g. Bancorp Bank
+  brand: CardBrand;
+  category: string; // 'Visa' | 'Mastercard' | 'American Express' | 'Standard' | 'HQ' | 'UHQ'
   cardType: CardType;
-  level: CardLevel;
-  country: string;
-  currency: string;
-  region: string;
-  expirationPolicy: string;
-  features: string[];
-  price: number; // Purchase price
-  stock: number;
-  isPremium: boolean;
-  isFeatured: boolean;
-  imageUrl: string;
-  deliveryMethod: string;
+  value: number; // Face value in USD, e.g. 100
+  price: number; // Selling price in USD, e.g. 95
+  region: string; // e.g. 'US', 'Global', 'EU', 'UK'
+  image: string; // Image URL or SVG identifier
+  description: string;
   terms: string;
-  status: 'active' | 'disabled';
+  availability: CardAvailability;
+  stockCount: number;
+  seller: string;
+  rating: number;
+  ratingCount: number;
+  featured?: boolean;
   createdAt: string;
-  description?: string;
 }
 
-export type PaymentStatus = 'pending' | 'verifying' | 'paid' | 'failed' | 'cancelled';
-export type DeliveryStatus = 'pending' | 'delivered' | 'failed';
+export type PaymentStatus = 
+  | 'Awaiting Payment' 
+  | 'Payment Submitted' 
+  | 'Pending Verification' 
+  | 'Paid' 
+  | 'Processing' 
+  | 'Completed' 
+  | 'Cancelled' 
+  | 'Rejected';
 
-export interface FulfillmentData {
-  cardNumber?: string;
-  expDate?: string;
-  cvv?: string;
-  claimCode?: string;
-  serialNumber?: string;
-  instructions?: string;
+export type OrderStatus = 
+  | 'Pending' 
+  | 'Processing' 
+  | 'Completed' 
+  | 'Cancelled';
+
+export interface OrderItem {
+  productId: string;
+  name: string;
+  brand: CardBrand;
+  cardType: string;
+  value: number;
+  price: number;
+  quantity: number;
+  image: string;
+  region: string;
+}
+
+export interface InventoryReference {
+  id: string;
+  productId: string;
+  productName: string;
+  tokenReference: string; // Secure token ID, e.g., 'CV-REF-V100-9842A1' (Never contains sensitive PAN/CVV)
+  isAssigned: boolean;
+  orderId?: string;
+  assignedAt?: string;
+  createdAt: string;
+}
+
+export interface DeliveredCardInfo {
+  id?: string;
+  cardName?: string;
+  brand?: CardBrand;
+  cardNumber: string; // 16 digits or card number
+  expiryDate: string; // MM/YY or MM/YYYY
+  cvv: string; // 3-4 digit CVV/CVC
+  cardHolder?: string; // Cardholder Name
+  pin?: string; // Optional PIN
+  balance?: number; // Balance on card
+  notes?: string; // Extra instructions, billing zip, activation guide
 }
 
 export interface Order {
   id: string;
   userId: string;
   userEmail: string;
-  productId: string;
-  productName: string;
-  productBrand: string;
-  productType: string;
-  cardValue?: number;
-  amount: number;
-  quantity: number;
-  paymentStatus: PaymentStatus;
-  deliveryStatus: DeliveryStatus;
-  txHash?: string;
-  fulfillmentData?: FulfillmentData;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export type DepositStatus = 'pending' | 'approved' | 'rejected';
-
-export interface Deposit {
-  id: string;
-  userId: string;
-  userEmail: string;
-  amount: number;
-  network: 'TRC20';
-  walletAddress: string;
-  txHash: string;
-  status: DepositStatus;
-  createdAt: string;
-  updatedAt: string;
-}
-
-export interface SupportMessage {
-  id: string;
-  senderId: string;
-  senderName: string;
-  senderRole: UserRole;
-  content: string;
-  timestamp: string;
-}
-
-export interface SupportTicket {
-  id: string;
-  userId: string;
   userName: string;
-  userEmail: string;
-  subject: string;
-  status: 'open' | 'closed' | 'pending_admin';
+  items: OrderItem[];
+  totalUSD: number;
+  totalUSDT: number;
+  paymentMethod: 'USDT_TRC20';
+  paymentAddress: string;
+  paymentStatus: PaymentStatus;
+  orderStatus: OrderStatus;
+  transactionHash?: string;
+  txSubmittedAt?: string;
+  approvedAt?: string;
+  rejectedAt?: string;
+  rejectionReason?: string;
+  createdAt: string;
   updatedAt: string;
-  createdAt: string;
-  messages: SupportMessage[];
+  deliveryTokens?: string[]; // Delivered fulfillment reference codes
+  deliveredCards?: DeliveredCardInfo[]; // Full card information inputted by admin upon approval
+  deliveryNotes?: string; // Overall fulfillment notes from admin
+  customerNotes?: string;
 }
 
-export type Ticket = SupportTicket;
-
-export interface Announcement {
+export interface User {
   id: string;
-  title: string;
-  content: string;
-  category: 'Announcement' | 'Maintenance' | 'New Product' | 'Promotion' | 'Update';
-  isImportant: boolean;
+  email: string;
+  fullName: string;
+  role: 'user' | 'admin';
   createdAt: string;
+  status: 'active' | 'disabled';
 }
 
-export interface AuditLog {
+export interface Category {
   id: string;
-  adminEmail: string;
-  action: string;
-  details: string;
-  timestamp: string;
+  name: string;
+  slug: string;
+  description: string;
+  active: boolean;
 }
 
 export interface SiteSettings {
-  trc20WalletAddress: string;
-  usdtExchangeRate: number;
-  minDeposit: number;
-  siteNotice: string;
+  storeName: string;
+  usdtTrc20Address: string;
+  paymentInstructions: string;
+  supportEmail: string;
+  telegramSupport: string;
+  exchangeRateUsdt: number; // 1 USD = 1 USDT default
+  minConfirmationBlocks: number;
 }
 
-export interface FilterState {
-  bin: string;
-  brand: string;
-  cardType: string;
-  level: string;
-  issuer: string;
-  country: string;
-  currency: string;
-  region: string;
-  availability: 'all' | 'in_stock' | 'out_of_stock';
-  category: 'all' | 'uhq' | 'hq' | 'standard' | 'virtual' | 'gift' | 'regional' | 'featured';
-  search: string;
+export interface CartItem {
+  product: Product;
+  quantity: number;
 }
 
-export interface AuthState {
-  user: User | null;
-  token: string | null;
-  isAuthenticated: boolean;
-  isLoading: boolean;
+export interface AuthResponse {
+  user: User;
+  token: string;
+}
+
+export interface AdminStats {
+  totalRevenue: number;
+  totalOrders: number;
+  pendingPayments: number;
+  activeProducts: number;
+  totalUsers: number;
+  completedOrders: number;
 }

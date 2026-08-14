@@ -2,15 +2,41 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <script>
+      // Safeguard for browser/iframe environments where window.fetch has only a getter
+      (function() {
+        try {
+          const originalFetch = window.fetch;
+          if (originalFetch) {
+            let currentFetch = originalFetch;
+            try {
+              Object.defineProperty(window, 'fetch', {
+                get() {
+                  return currentFetch;
+                },
+                set(newFetch) {
+                  currentFetch = newFetch;
+                },
+                configurable: true,
+                enumerable: true
+              });
+            } catch (_) {}
+          }
+        } catch (_) {}
+
+        window.addEventListener('error', function(event) {
+          if (event && event.message && event.message.includes('Cannot set property fetch of #<Window> which has only a getter')) {
+            event.preventDefault();
+            event.stopPropagation();
+          }
+        }, true);
+      })();
+    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>CardVault | Virtual & Prepaid Card Terminal</title>
-    <meta name="description" content="CardVault - Premium digital card marketplace terminal for virtual, prepaid, and corporate gift cards." />
-    <meta property="og:title" content="CardVault | Virtual & Prepaid Card Terminal" />
-    <meta property="og:description" content="CardVault - Premium digital card marketplace terminal for virtual, prepaid, and corporate gift cards." />
-    <meta property="og:type" content="website" />
-    <meta name="twitter:card" content="summary_large_image" />
-    <script type="module" crossorigin src="/assets/index-DmcqlMx9.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-D6AC2_Ao.css">
+    <title>CardVault</title>
+    <meta name="description" content="Secure instant delivery digital card marketplace." />
+    <script type="module" crossorigin src="/assets/index-DPdCm_B-.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-C_vblI8R.css">
   </head>
   <body>
     <div id="root"></div>

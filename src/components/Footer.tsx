@@ -1,26 +1,85 @@
 import React from 'react';
-import { ShieldCheck, Activity, Globe, Lock } from 'lucide-react';
+import { CreditCard, Wallet } from 'lucide-react';
 
-export const Footer: React.FC = () => {
+interface FooterProps {
+  onOpenInfo: (type: 'faq' | 'terms' | 'privacy' | 'payment_guide') => void;
+  onNavigate: (view: string) => void;
+}
+
+export const Footer: React.FC<FooterProps> = ({ onOpenInfo, onNavigate }) => {
   return (
-    <footer className="h-8 bg-[#0a0a0a] border-t border-[#1f1f1f] flex items-center justify-between px-4 text-[9px] text-[#666666] uppercase font-mono font-bold select-none z-30">
-      <div className="flex items-center space-x-4 overflow-x-auto scrollbar-none py-1">
-        <span className="text-blue-500 flex items-center space-x-1 whitespace-nowrap">
-          <Activity className="w-3 h-3 inline mr-1 text-emerald-400" />
-          <span>LIVE MARKET DATA</span>
-        </span>
-        <span className="whitespace-nowrap">BTC/USD: $64,210.42</span>
-        <span className="whitespace-nowrap text-yellow-500">USDT: $1.0000</span>
-        <span className="whitespace-nowrap hidden sm:inline">GLOBAL INVENTORY: 12,402 CARDS</span>
-      </div>
+    <footer className="bg-[#0e0e0e] border-t border-[#222222] text-[#8e8e8e] text-xs py-7 mt-10 select-none">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+          {/* Brand Col */}
+          <div className="space-y-2">
+            <div className="flex items-center space-x-2">
+              <div className="w-6 h-6 rounded bg-blue-600 flex items-center justify-center text-white text-xs font-bold">
+                <CreditCard className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-sm font-bold text-white tracking-tight">
+                Card<span className="text-blue-400">Vault</span>
+              </span>
+            </div>
+          </div>
 
-      <div className="hidden md:flex items-center space-x-4 text-[#777777] whitespace-nowrap">
-        <span className="flex items-center space-x-1">
-          <ShieldCheck className="w-3 h-3 text-emerald-400" />
-          <span>SECURITY: ISO-27001 CERTIFIED</span>
-        </span>
-        <span>•</span>
-        <span>© 2026 CARDVAULT TERMINAL LTD. ALL RIGHTS RESERVED.</span>
+          {/* Navigation Links */}
+          <div className="space-y-1.5">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+              Marketplace
+            </h4>
+            <ul className="space-y-1 text-[11px]">
+              <li>
+                <button onClick={() => onNavigate('catalog')} className="hover:text-blue-400 transition-colors">
+                  Cards Catalog
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onNavigate('orders')} className="hover:text-blue-400 transition-colors">
+                  Track Order / Invoice
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onOpenInfo('payment_guide')} className="hover:text-blue-400 text-emerald-400 flex items-center space-x-1 transition-colors">
+                  <Wallet className="w-3 h-3" />
+                  <span>USDT TRC20 Guide</span>
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          {/* Legal & Policies */}
+          <div className="space-y-1.5">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider">
+              Legal & Policies
+            </h4>
+            <ul className="space-y-1 text-[11px]">
+              <li>
+                <button onClick={() => onOpenInfo('faq')} className="hover:text-blue-400 transition-colors">
+                  Frequently Asked Questions
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onOpenInfo('terms')} className="hover:text-blue-400 transition-colors">
+                  Terms & Conditions
+                </button>
+              </li>
+              <li>
+                <button onClick={() => onOpenInfo('privacy')} className="hover:text-blue-400 transition-colors">
+                  Privacy & Data Policy
+                </button>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="pt-3.5 border-t border-[#1f1f1f] flex flex-col sm:flex-row items-center justify-between text-[11px] text-[#737373] gap-2">
+          <div>© 2026 CardVault Marketplace. All rights reserved.</div>
+          <div className="flex items-center space-x-4">
+            <span>Payment Network: TRON TRC20 (USDT)</span>
+            <span>24/7 Verified Order Fulfillment</span>
+          </div>
+        </div>
       </div>
     </footer>
   );

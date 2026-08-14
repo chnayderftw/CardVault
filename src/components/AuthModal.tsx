@@ -1,192 +1,234 @@
 import React, { useState } from 'react';
-import { X, Lock, Mail, User as UserIcon, ShieldAlert, CheckCircle2, Vault } from 'lucide-react';
-import { api, setStoredToken } from '../lib/api';
-import { User } from '../types';
+import { useAuth } from '../context/AuthContext';
+import { X, Lock, Mail, User, ArrowRight, Shield, CheckCircle2 } from 'lucide-react';
 
 interface AuthModalProps {
-  initialMode: 'login' | 'register';
+  mode: 'login' | 'signup';
+  isOpen: boolean;
   onClose: () => void;
-  onSuccess: (user: User) => void;
+  onSwitchMode: (mode: 'login' | 'signup') => void;
 }
 
-export const AuthModal: React.FC<AuthModalProps> = ({ initialMode, onClose, onSuccess }) => {
-  const [mode, setMode] = useState<'login' | 'register'>(initialMode);
-  const [fullName, setFullName] = useState('');
+export const AuthModal: React.FC<AuthModalProps> = ({
+  mode,
+  isOpen,
+  onClose,
+  onSwitchMode,
+}) => {
+  const { login, signup } = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [rememberMe, setRememberMe] = useState(true);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+
+  if (!isOpen) return null;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setSuccess('');
     setLoading(true);
 
     try {
-      if (mode === 'login') {
-        const res = await api.login({ email, password });
-        setStoredToken(res.token);
-        onSuccess(res.user);
-        onClose();
-      } else {
+      if (mode === 'signup') {
         if (password !== confirmPassword) {
-          setError('Passwords do not match.');
+          setError('Passwords do not match');
           setLoading(false);
           return;
         }
-        const res = await api.register({ fullName, email, password, confirmPassword });
-        setStoredToken(res.token);
-        onSuccess(res.user);
-        onClose();
+        await signup({ fullName, email, password, confirmPassword });
+        setSuccess('Account created successfully!');
+        setTimeout(() => onClose(), 600);
+      } else {
+        await login({ email, password });
+        setSuccess('Logged in successfully!');
+        setTimeout(() => onClose(), 600);
       }
     } catch (err: any) {
-      setError(err.message || 'Authentication failed.');
+      setError(err.message || 'Authentication failed');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-xs font-mono">
-      <div className="w-full max-w-md bg-[#0a0a0a] border border-[#1f1f1f] text-xs text-[#e0e0e0] shadow-2xl overflow-hidden">
+    <div
+      id="auth-modal-overlay"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm select-none"
+      onClick={onClose}
+    >
+      <div
+        id="auth-modal-panel"
+        className="relative w-full max-w-md bg-[#141414] border border-[#262626] rounded-md shadow-2xl overflow-hidden"
+        onClick={(e) => e.stopPropagation()}
+      >
         {/* Header */}
-        <div className="flex items-center justify-between p-3 bg-[#111111] border-b border-[#1f1f1f]">
+        <div className="flex items-center justify-between px-5 py-3 border-b border-[#222222] bg-[#101010]">
           <div className="flex items-center space-x-2">
-            <div className="w-5 h-5 bg-gradient-to-br from-blue-600 to-indigo-700 rounded flex items-center justify-center text-white">
-              <Vault className="w-3 h-3" />
-            </div>
-            <span className="font-bold text-xs uppercase tracking-wider text-white">
-              {mode === 'login' ? 'CARDVAULT LOGIN' : 'CREATE CLIENT ACCOUNT'}
-            </span>
+            <Lock className="w-3.5 h-3.5 text-blue-400" />
+            <h3 className="text-xs font-bold text-white tracking-wide uppercase">
+              {mode === 'login' ? 'Account Login' : 'Create CardVault Account'}
+            </h3>
           </div>
-          <button onClick={onClose} className="text-[#888888] hover:text-white p-1">
+          <button
+            onClick={onClose}
+            className="p-1 rounded text-[#8e8e8e] hover:text-white hover:bg-[#181818]"
+          >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Form Body */}
-        <form onSubmit={handleSubmit} className="p-5 space-y-4">
+        {/* Body */}
+        <div className="p-5 space-y-3.5">
           {error && (
-            <div className="bg-red-950/40 border border-red-800/60 p-2.5 text-red-400 text-[11px] flex items-center space-x-2">
-              <ShieldAlert className="w-4 h-4 flex-shrink-0" />
-              <span>{error}</span>
+            <div className="p-2.5 bg-rose-950/60 border border-rose-800 text-rose-300 rounded text-xs">
+              {error}
             </div>
           )}
 
-          {mode === 'register' && (
+          {success && (
+            <div className="p-2.5 bg-emerald-950/60 border border-emerald-800 text-emerald-300 rounded text-xs flex items-center space-x-1.5">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{success}</span>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-3">
+            {mode === 'signup' && (
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-[#8e8e8e] block">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <User className="w-3.5 h-3.5 text-[#737373] absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    required
+                    placeholder="Alex Reynolds"
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    className="w-full bg-[#101010] border border-[#262626] rounded px-3 py-1.5 pl-8.5 text-xs text-white placeholder-[#737373] focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            )}
+
             <div className="space-y-1">
-              <label className="text-[9px] uppercase text-[#888888]">FULL NAME / ENTITY</label>
+              <label className="text-[11px] font-semibold text-[#8e8e8e] block">
+                Email Address
+              </label>
               <div className="relative">
+                <Mail className="w-3.5 h-3.5 text-[#737373] absolute left-3 top-2.5" />
                 <input
-                  type="text"
+                  type="email"
                   required
-                  placeholder="e.g. John Doe / Acme Corp"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="w-full bg-[#151515] border border-[#2a2a2a] p-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
+                  placeholder="name@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="w-full bg-[#101010] border border-[#262626] rounded px-3 py-1.5 pl-8.5 text-xs text-white placeholder-[#737373] focus:outline-none focus:border-blue-500"
                 />
               </div>
             </div>
-          )}
 
-          <div className="space-y-1">
-            <label className="text-[9px] uppercase text-[#888888]">EMAIL ADDRESS</label>
-            <input
-              type="email"
-              required
-              placeholder="user@enterprise.com"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className="w-full bg-[#151515] border border-[#2a2a2a] p-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
-            />
-          </div>
-
-          <div className="space-y-1">
-            <label className="text-[9px] uppercase text-[#888888]">PASSWORD</label>
-            <input
-              type="password"
-              required
-              placeholder="••••••••••••"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="w-full bg-[#151515] border border-[#2a2a2a] p-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
-            />
-          </div>
-
-          {mode === 'register' && (
             <div className="space-y-1">
-              <label className="text-[9px] uppercase text-[#888888]">CONFIRM PASSWORD</label>
-              <input
-                type="password"
-                required
-                placeholder="••••••••••••"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="w-full bg-[#151515] border border-[#2a2a2a] p-2 text-xs text-white focus:outline-none focus:border-blue-500 font-mono"
-              />
-            </div>
-          )}
-
-          {mode === 'login' && (
-            <div className="flex items-center justify-between text-[10px]">
-              <label className="flex items-center space-x-2 cursor-pointer text-[#888888]">
-                <input
-                  type="checkbox"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  className="bg-[#151515] border-[#2a2a2a] text-blue-600 focus:ring-0"
-                />
-                <span>REMEMBER SESSION</span>
+              <label className="text-[11px] font-semibold text-[#8e8e8e] block">
+                Password
               </label>
-              <a
-                href="#forgot"
-                onClick={(e) => {
-                  e.preventDefault();
-                  alert('For password reset assistance, please contact Enterprise Support via TRC20 verification ticket.');
-                }}
-                className="text-blue-400 hover:underline"
-              >
-                FORGOT PASSWORD?
-              </a>
+              <div className="relative">
+                <Lock className="w-3.5 h-3.5 text-[#737373] absolute left-3 top-2.5" />
+                <input
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="w-full bg-[#101010] border border-[#262626] rounded px-3 py-1.5 pl-8.5 text-xs text-white placeholder-[#737373] focus:outline-none focus:border-blue-500"
+                />
+              </div>
             </div>
-          )}
 
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 hover:bg-blue-500 disabled:bg-gray-800 text-white font-bold uppercase py-2 text-xs tracking-wider transition shadow-md"
-          >
-            {loading ? 'AUTHENTICATING...' : mode === 'login' ? 'SIGN IN TO PORTAL' : 'CREATE CLIENT ACCOUNT'}
-          </button>
+            {mode === 'signup' && (
+              <div className="space-y-1">
+                <label className="text-[11px] font-semibold text-[#8e8e8e] block">
+                  Confirm Password
+                </label>
+                <div className="relative">
+                  <Lock className="w-3.5 h-3.5 text-[#737373] absolute left-3 top-2.5" />
+                  <input
+                    type="password"
+                    required
+                    placeholder="••••••••"
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="w-full bg-[#101010] border border-[#262626] rounded px-3 py-1.5 pl-8.5 text-xs text-white placeholder-[#737373] focus:outline-none focus:border-blue-500"
+                  />
+                </div>
+              </div>
+            )}
 
-          <div className="pt-2 border-t border-[#1f1f1f] text-center text-[10px] text-[#888888]">
+            {mode === 'login' && (
+              <div className="flex items-center justify-between text-[11px] text-[#8e8e8e]">
+                <label className="flex items-center space-x-1.5 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="rounded bg-[#101010] border-[#262626] text-blue-600 focus:ring-0"
+                  />
+                  <span>Remember Me</span>
+                </label>
+
+                <button
+                  type="button"
+                  onClick={() => alert('Password reset is unavailable. Please create a new account or check your login credentials.')}
+                  className="text-blue-400 hover:underline"
+                >
+                  Forgot Password?
+                </button>
+              </div>
+            )}
+
+            <button
+              id="auth-submit-btn"
+              type="submit"
+              disabled={loading}
+              className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white rounded text-xs font-semibold tracking-wide transition-colors shadow flex items-center justify-center space-x-1.5"
+            >
+              <span>{loading ? 'Processing...' : mode === 'login' ? 'Login' : 'Create Account'}</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </form>
+
+          {/* Switch Mode */}
+          <div className="pt-1.5 text-center text-xs text-[#8e8e8e]">
             {mode === 'login' ? (
-              <span>
-                NEED AN ACCOUNT?{' '}
+              <p>
+                Don't have an account?{' '}
                 <button
-                  type="button"
-                  onClick={() => setMode('register')}
-                  className="text-blue-400 hover:underline font-bold"
+                  onClick={() => onSwitchMode('signup')}
+                  className="text-blue-400 font-semibold hover:underline"
                 >
-                  SIGN UP HERE
+                  Create Account
                 </button>
-              </span>
+              </p>
             ) : (
-              <span>
-                ALREADY REGISTERED?{' '}
+              <p>
+                Already have an account?{' '}
                 <button
-                  type="button"
-                  onClick={() => setMode('login')}
-                  className="text-blue-400 hover:underline font-bold"
+                  onClick={() => onSwitchMode('login')}
+                  className="text-blue-400 font-semibold hover:underline"
                 >
-                  LOG IN HERE
+                  Login
                 </button>
-              </span>
+              </p>
             )}
           </div>
-        </form>
+        </div>
       </div>
     </div>
   );

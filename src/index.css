@@ -1,35 +1,30 @@
 @import "tailwindcss";
 
-@layer base {
-  html, body, #root {
-    width: 100%;
-    min-height: 100vh;
-    margin: 0;
-    padding: 0;
-  }
-  body {
-    background-color: #050505;
-    color: #e0e0e0;
-    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-    overflow-x: hidden;
-  }
-}
-
-/* Custom High Density Trading Terminal Scrollbars */
+/* High Density clean dark scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 5px;
+  height: 5px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #0a0a0a;
+  background: #0b0b0b;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #1f1f1f;
-  border-radius: 0px;
+  background: #262626;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #2a2a2a;
+  background: #3b82f6;
 }
+
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
