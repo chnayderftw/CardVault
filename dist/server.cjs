@@ -85,7 +85,8 @@ var LocalStorageManager = class {
       { id: "cat_all", name: "All", slug: "all", description: "All available cards", active: true },
       { id: "cat_std", name: "Standard", slug: "standard", description: "Standard quality cards ($1,425 - $4,225 Balance)", active: true },
       { id: "cat_hq", name: "HQ", slug: "hq", description: "High Quality (HQ) high-balance verified cards ($6,485 - $8,600 Balance)", active: true },
-      { id: "cat_uhq", name: "UHQ", slug: "uhq", description: "Ultra High Quality (UHQ) top-tier instant balance cards ($18,000+ - $40,000+ Balance)", active: true },
+      { id: "cat_uhq", name: "UHQ", slug: "uhq", description: "Ultra High Quality (UHQ) top-tier instant balance cards ($18,000+ - $42,000+ Balance)", active: true },
+      { id: "cat_binance", name: "Binance", slug: "binance", description: "Verified Binance Accounts with high pre-loaded balance ($42,000+ USD)", active: true },
       { id: "cat_visa", name: "Visa", slug: "visa", description: "Visa cards for worldwide use", active: true },
       { id: "cat_mc", name: "Mastercard", slug: "mastercard", description: "Mastercard cards for global shopping", active: true },
       { id: "cat_amex", name: "American Express", slug: "american-express", description: "American Express cards", active: true }
@@ -293,6 +294,46 @@ var LocalStorageManager = class {
         ratingCount: 112,
         featured: false,
         createdAt: "2026-01-08T00:00:00Z"
+      },
+      {
+        id: "prod_binance_std_2200",
+        name: "Binance Account Standard Balance : 2200+ USD",
+        brand: "Binance",
+        category: "Binance",
+        cardType: "Standard",
+        value: 2200,
+        price: 54,
+        region: "Global",
+        image: "/cards/binance-2200.png",
+        description: "Verified Binance Account Standard pre-loaded with $2,200+ USD cryptocurrency balance. Fully verified account with clean transaction history and unrestricted trading limits.",
+        terms: "Instant digital delivery of Binance login credentials, security PIN, and 2FA recovery backup upon verified USDT payment.",
+        availability: "in_stock",
+        stockCount: 20,
+        seller: "CardVault Official",
+        rating: 4.95,
+        ratingCount: 94,
+        featured: false,
+        createdAt: "2026-01-08T14:00:00Z"
+      },
+      {
+        id: "prod_binance_uhq_42000",
+        name: "Binance Account UHQ Balance : 42,000+ USD",
+        brand: "Binance",
+        category: "Binance",
+        cardType: "UHQ",
+        value: 42e3,
+        price: 400,
+        region: "Global",
+        image: "/cards/binance-42000.png",
+        description: "Verified Binance Account UHQ pre-loaded with $42,000+ USD cryptocurrency balance. Fully verified Level 2 account with instant withdrawal limits, clean security logs, and 2FA recovery backup.",
+        terms: "Complete account credentials, email login, seed phrase, and 2FA backup codes delivered immediately upon verified USDT payment.",
+        availability: "in_stock",
+        stockCount: 10,
+        seller: "CardVault Official",
+        rating: 5,
+        ratingCount: 186,
+        featured: true,
+        createdAt: "2026-01-08T12:00:00Z"
       }
     ];
     const initialSettings = {

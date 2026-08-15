@@ -16,26 +16,13 @@ export const PaymentView: React.FC<PaymentViewProps> = ({
 }) => {
   const [order, setOrder] = useState<Order>(initialOrder);
   const [copied, setCopied] = useState(false);
-  const [qrCodeUrl, setQrCodeUrl] = useState<string>('');
+  const [copiedAmount, setCopiedAmount] = useState(false);
   const [txHash, setTxHash] = useState(order.transactionHash || '');
   const [submittingTx, setSubmittingTx] = useState(false);
   const [submitSuccess, setSubmitSuccess] = useState('');
   const [submitError, setSubmitError] = useState('');
   const [refreshing, setRefreshing] = useState(false);
   const [timeLeft, setTimeLeft] = useState(1800); // 30 mins
-
-  // Load QR code and refresh order status
-  useEffect(() => {
-    async function loadQR() {
-      try {
-        const qr = await api.getPaymentQR(order.paymentAddress, order.totalUSDT);
-        setQrCodeUrl(qr.qrDataUrl);
-      } catch (err) {
-        console.error('Failed to load QR:', err);
-      }
-    }
-    loadQR();
-  }, [order.paymentAddress, order.totalUSDT]);
 
   // Countdown timer
   useEffect(() => {
@@ -55,6 +42,12 @@ export const PaymentView: React.FC<PaymentViewProps> = ({
     navigator.clipboard.writeText(order.paymentAddress);
     setCopied(true);
     setTimeout(() => setCopied(false), 2500);
+  };
+
+  const handleCopyAmount = () => {
+    navigator.clipboard.writeText(order.totalUSDT.toString());
+    setCopiedAmount(true);
+    setTimeout(() => setCopiedAmount(false), 2500);
   };
 
   const handleRefreshOrder = async () => {
@@ -173,169 +166,192 @@ export const PaymentView: React.FC<PaymentViewProps> = ({
           </div>
         </div>
 
-        <div className="p-5 grid grid-cols-1 md:grid-cols-12 gap-6">
-          {/* Left Column: QR Code & Wallet Address */}
-          <div className="md:col-span-5 flex flex-col items-center justify-center bg-[#101010] border border-[#222222] rounded-md p-4 text-center">
-            <div className="text-xs font-semibold text-[#d1d1d1] uppercase tracking-wider mb-2.5">
-              Scan to Pay (TRC20)
-            </div>
+        {/* Payment Body Content */}
+        <div className="p-5 space-y-6">
+          {/* Top Payment Highlights: Address & Network Box */}
+          <div className="bg-[#101010] border border-[#262626] rounded-lg p-4 space-y-4">
+            <div className="flex flex-wrap items-center justify-between gap-2 border-b border-[#222222] pb-3">
+              <div className="inline-flex items-center space-x-2">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                <span className="text-xs font-semibold text-emerald-400 tracking-wide font-mono">
+                  NETWORK: TRON (TRC20) ONLY
+                </span>
+              </div>
 
-            {/* QR Code Container */}
-            <div className="p-2 bg-white rounded shadow border border-slate-300">
-              {qrCodeUrl ? (
-                <img
-                  src={qrCodeUrl}
-                  alt="USDT TRC20 QR Code"
-                  className="w-44 h-44 object-contain"
-                  referrerPolicy="no-referrer"
-                />
-              ) : (
-                <div className="w-44 h-44 flex items-center justify-center bg-slate-100 text-slate-400 text-xs">
-                  Generating QR...
+              {order.paymentStatus === 'Awaiting Payment' && (
+                <div className="flex items-center space-x-1.5 text-xs text-amber-400 font-mono bg-amber-950/40 border border-amber-800/60 px-2.5 py-1 rounded">
+                  <Clock className="w-3.5 h-3.5" />
+                  <span>Invoice valid for: {formatTimer(timeLeft)}</span>
                 </div>
               )}
             </div>
 
-            {/* Network Indicator */}
-            <div className="mt-3 inline-flex items-center space-x-1.5 px-2.5 py-0.5 rounded-full bg-emerald-950/60 border border-emerald-800/60 text-emerald-300 text-[11px] font-mono font-medium">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span>NETWORK: TRON / TRC20 ONLY</span>
-            </div>
-
-            {/* Expiration Timer */}
-            {order.paymentStatus === 'Awaiting Payment' && (
-              <div className="mt-2.5 flex items-center space-x-1.5 text-xs text-amber-400 font-mono">
-                <Clock className="w-3.5 h-3.5" />
-                <span>Invoice valid for: {formatTimer(timeLeft)}</span>
+            {/* Merchant USDT Receiving Address */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="font-semibold text-white">Merchant USDT TRC20 Receiving Address:</span>
+                <span className="text-[11px] text-amber-400 font-medium">Send TRC20 USDT only</span>
               </div>
-            )}
-          </div>
 
-          {/* Right Column: Address Details & TXID Submission */}
-          <div className="md:col-span-7 flex flex-col justify-between space-y-4">
-            {/* Step 1: Receiving Wallet Address */}
-            <div className="space-y-1.5">
-              <label className="text-xs font-semibold text-[#d1d1d1] flex items-center justify-between">
-                <span>Merchant USDT TRC20 Receiving Address:</span>
-                <span className="text-[10px] text-amber-400 font-normal">Send TRC20 USDT only</span>
-              </label>
-
-              <div className="flex items-center space-x-2 bg-[#101010] border border-[#262626] rounded-md p-2">
-                <code className="text-xs font-mono text-[#d1d1d1] break-all flex-1 select-all font-semibold">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-[#0a0a0a] border border-[#2e2e2e] rounded-md p-3">
+                <code className="text-xs sm:text-sm font-mono text-emerald-300 break-all select-all font-semibold flex-1 tracking-wide">
                   {order.paymentAddress}
                 </code>
                 <button
                   id="copy-usdt-address-btn"
                   onClick={handleCopy}
-                  className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white rounded text-xs font-semibold flex items-center space-x-1 shrink-0 transition-colors shadow"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white rounded text-xs font-semibold flex items-center justify-center space-x-1.5 shrink-0 transition-colors shadow"
                 >
-                  {copied ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
-                  <span>{copied ? 'Copied!' : 'Copy'}</span>
+                  {copied ? <Check className="w-4 h-4 text-emerald-300" /> : <Copy className="w-4 h-4" />}
+                  <span>{copied ? 'Address Copied!' : 'Copy Address'}</span>
                 </button>
               </div>
             </div>
 
-            {/* Order Items Snapshot */}
-            <div className="bg-[#101010] border border-[#222222] rounded-md p-2.5 space-y-1.5 text-xs">
-              <div className="font-semibold text-[#d1d1d1]">Items in this Order:</div>
-              <div className="space-y-1">
-                {order.items.map((it, idx) => (
-                  <div key={idx} className="flex justify-between text-[#8e8e8e] font-mono text-[11px]">
-                    <span className="truncate max-w-[240px] text-[#d1d1d1]">
-                      {it.quantity}x {it.name} ({it.brand})
-                    </span>
-                    <span>${(it.price * it.quantity).toFixed(2)} USD</span>
-                  </div>
-                ))}
+            {/* Amount confirmation */}
+            <div className="flex flex-wrap items-center justify-between gap-3 bg-[#141414] border border-[#222222] rounded-md px-3.5 py-2.5 text-xs">
+              <div className="text-[#a3a3a3]">
+                Exact Amount to Transfer: <span className="text-white font-mono font-bold">{order.totalUSDT.toFixed(2)} USDT</span>
               </div>
+              <button
+                onClick={handleCopyAmount}
+                className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center space-x-1 font-mono transition-colors"
+              >
+                {copiedAmount ? <Check className="w-3 h-3 text-emerald-400" /> : <Copy className="w-3 h-3" />}
+                <span>{copiedAmount ? 'Amount Copied' : 'Copy Exact Amount'}</span>
+              </button>
             </div>
+          </div>
 
-            {/* Step 2: Submit TXID Section */}
-            {(order.paymentStatus === 'Awaiting Payment' || order.paymentStatus === 'Payment Submitted' || order.paymentStatus === 'Pending Verification') && (
-              <form onSubmit={handleSubmitTxHash} className="bg-[#181818] border border-[#262626] rounded-md p-3.5 space-y-2.5">
-                <div className="flex items-center space-x-1.5 text-xs font-bold text-white uppercase tracking-wider">
-                  <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
-                  <span>Submit TRC20 Transaction Hash (TXID)</span>
-                </div>
-
-                <p className="text-[11px] text-[#8e8e8e] leading-tight">
-                  After completing the transfer in your crypto wallet (e.g. TronLink, Binance, TrustWallet), paste your Transaction ID (TXID) below to start admin verification:
-                </p>
-
-                <div className="space-y-1">
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. 8f0923cb910948ac0192834baf571029384bc190..."
-                    value={txHash}
-                    onChange={(e) => setTxHash(e.target.value)}
-                    className="w-full bg-[#101010] border border-[#262626] rounded px-3 py-1.5 text-xs font-mono text-white placeholder-[#525252] focus:outline-none focus:border-blue-500"
-                  />
-                </div>
-
-                {submitError && (
-                  <div className="p-2 bg-rose-950/60 border border-rose-800 text-rose-300 rounded text-[11px]">
-                    {submitError}
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-5">
+            {/* Left/Main Column: TXID Submission & Card Delivery */}
+            <div className="md:col-span-7 space-y-4">
+              {/* Step: Submit TXID Section */}
+              {(order.paymentStatus === 'Awaiting Payment' || order.paymentStatus === 'Payment Submitted' || order.paymentStatus === 'Pending Verification') && (
+                <form onSubmit={handleSubmitTxHash} className="bg-[#181818] border border-[#262626] rounded-md p-4 space-y-3">
+                  <div className="flex items-center space-x-1.5 text-xs font-bold text-white uppercase tracking-wider">
+                    <ShieldCheck className="w-4 h-4 text-blue-400" />
+                    <span>Submit TRC20 Transaction Hash (TXID)</span>
                   </div>
-                )}
 
-                {submitSuccess && (
-                  <div className="p-2 bg-emerald-950/60 border border-emerald-800 text-emerald-300 rounded text-[11px] flex items-center space-x-1.5">
-                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                    <span>{submitSuccess}</span>
+                  <p className="text-xs text-[#8e8e8e] leading-relaxed">
+                    After sending USDT from your wallet (TronLink, Binance, TrustWallet, etc.), paste your Transaction Hash (TXID) below to start verification:
+                  </p>
+
+                  <div className="space-y-1.5">
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 8f0923cb910948ac0192834baf571029384bc190..."
+                      value={txHash}
+                      onChange={(e) => setTxHash(e.target.value)}
+                      className="w-full bg-[#101010] border border-[#262626] rounded px-3 py-2 text-xs font-mono text-white placeholder-[#525252] focus:outline-none focus:border-blue-500"
+                    />
                   </div>
-                )}
 
-                <button
-                  id="submit-txid-btn"
-                  type="submit"
-                  disabled={submittingTx}
-                  className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white rounded text-xs font-semibold tracking-wide transition-colors shadow"
-                >
-                  {submittingTx ? 'Submitting TXID...' : 'Submit Transaction Hash for Verification'}
-                </button>
-              </form>
-            )}
-
-            {/* Delivered Cards Information (When Paid/Completed) */}
-            {(order.paymentStatus === 'Paid' || order.paymentStatus === 'Completed') && (
-              <div className="space-y-3">
-                {order.deliveredCards && order.deliveredCards.length > 0 ? (
-                  <DeliveredCardDisplay
-                    cards={order.deliveredCards}
-                    deliveryNotes={order.deliveryNotes}
-                    orderId={order.id}
-                  />
-                ) : (
-                  <div className="bg-emerald-950/30 border border-emerald-700/60 rounded-md p-3.5 space-y-2">
-                    <div className="flex items-center space-x-2 text-emerald-400 font-bold text-xs">
-                      <CheckCircle2 className="w-4 h-4" />
-                      <span>Payment Verified & Order Approved!</span>
+                  {submitError && (
+                    <div className="p-2.5 bg-rose-950/60 border border-rose-800 text-rose-300 rounded text-xs">
+                      {submitError}
                     </div>
+                  )}
 
-                    <p className="text-xs text-[#d1d1d1] leading-normal">
-                      Your USDT TRC20 payment has been successfully confirmed. Your card information will appear here once processed by the administrator.
-                    </p>
-                  </div>
-                )}
-              </div>
-            )}
+                  {submitSuccess && (
+                    <div className="p-2.5 bg-emerald-950/60 border border-emerald-800 text-emerald-300 rounded text-xs flex items-center space-x-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
+                      <span>{submitSuccess}</span>
+                    </div>
+                  )}
 
-            {/* Rejection Notice */}
-            {order.paymentStatus === 'Rejected' && (
-              <div className="bg-rose-950/40 border border-rose-800 rounded-md p-3.5 space-y-1.5 text-xs text-rose-300">
-                <div className="flex items-center space-x-2 font-bold text-rose-400">
-                  <AlertTriangle className="w-4 h-4" />
-                  <span>Payment Verification Rejected</span>
+                  <button
+                    id="submit-txid-btn"
+                    type="submit"
+                    disabled={submittingTx}
+                    className="w-full py-2.5 px-3 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:opacity-50 text-white rounded text-xs font-semibold tracking-wide transition-colors shadow"
+                  >
+                    {submittingTx ? 'Submitting TXID...' : 'Submit Transaction Hash for Verification'}
+                  </button>
+                </form>
+              )}
+
+              {/* Delivered Cards Information (When Paid/Completed) */}
+              {(order.paymentStatus === 'Paid' || order.paymentStatus === 'Completed') && (
+                <div className="space-y-3">
+                  {order.deliveredCards && order.deliveredCards.length > 0 ? (
+                    <DeliveredCardDisplay
+                      cards={order.deliveredCards}
+                      deliveryNotes={order.deliveryNotes}
+                      orderId={order.id}
+                    />
+                  ) : (
+                    <div className="bg-emerald-950/30 border border-emerald-700/60 rounded-md p-4 space-y-2">
+                      <div className="flex items-center space-x-2 text-emerald-400 font-bold text-xs">
+                        <CheckCircle2 className="w-4 h-4" />
+                        <span>Payment Verified & Order Approved!</span>
+                      </div>
+
+                      <p className="text-xs text-[#d1d1d1] leading-relaxed">
+                        Your USDT TRC20 payment has been successfully confirmed. Your card information will appear here once processed by the administrator.
+                      </p>
+                    </div>
+                  )}
                 </div>
-                <p>
-                  Reason: {order.rejectionReason || 'The submitted transaction hash could not be verified on the TRON network.'}
-                </p>
-                <p className="text-[11px] text-[#8e8e8e]">
-                  Please verify your transfer on TronScan and submit a valid USDT TRC20 transaction hash (TXID).
-                </p>
+              )}
+
+              {/* Rejection Notice */}
+              {order.paymentStatus === 'Rejected' && (
+                <div className="bg-rose-950/40 border border-rose-800 rounded-md p-4 space-y-2 text-xs text-rose-300">
+                  <div className="flex items-center space-x-2 font-bold text-rose-400">
+                    <AlertTriangle className="w-4 h-4" />
+                    <span>Payment Verification Rejected</span>
+                  </div>
+                  <p>
+                    Reason: {order.rejectionReason || 'The submitted transaction hash could not be verified on the TRON network.'}
+                  </p>
+                  <p className="text-[11px] text-[#8e8e8e]">
+                    Please verify your transfer on TronScan and submit a valid USDT TRC20 transaction hash (TXID).
+                  </p>
+                </div>
+              )}
+            </div>
+
+            {/* Right Column: Order Items & Instructions */}
+            <div className="md:col-span-5 space-y-4">
+              {/* Order Items Snapshot */}
+              <div className="bg-[#101010] border border-[#222222] rounded-md p-3.5 space-y-2.5 text-xs">
+                <div className="font-semibold text-white flex items-center justify-between border-b border-[#222222] pb-2">
+                  <span>Purchased Cards</span>
+                  <span className="text-[#8e8e8e] font-mono">{order.items.length} item(s)</span>
+                </div>
+                <div className="space-y-2">
+                  {order.items.map((it, idx) => (
+                    <div key={idx} className="flex justify-between items-start text-xs font-mono">
+                      <div className="text-[#d1d1d1] leading-tight">
+                        <span className="text-white font-semibold">{it.quantity}x</span> {it.name}
+                        <div className="text-[10px] text-[#737373] mt-0.5">{it.brand} • {it.region}</div>
+                      </div>
+                      <span className="text-emerald-400 font-semibold shrink-0 ml-2">
+                        ${(it.price * it.quantity).toFixed(2)}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+                <div className="border-t border-[#222222] pt-2 flex justify-between font-bold text-xs">
+                  <span className="text-[#a3a3a3]">Total</span>
+                  <span className="text-emerald-400 font-mono">${order.totalUSD.toFixed(2)} USD ({order.totalUSDT.toFixed(2)} USDT)</span>
+                </div>
               </div>
-            )}
+
+              {/* Quick instructions */}
+              <div className="bg-[#101010] border border-[#222222] rounded-md p-3.5 space-y-2 text-xs text-[#8e8e8e]">
+                <div className="font-semibold text-[#d1d1d1]">Payment Steps:</div>
+                <ol className="list-decimal list-inside space-y-1.5 text-[11px] text-[#a3a3a3] leading-relaxed">
+                  <li>Copy the merchant USDT TRC20 address above.</li>
+                  <li>Open your TRC20 wallet / exchange and transfer {order.totalUSDT.toFixed(2)} USDT.</li>
+                  <li>Copy the transaction hash (TXID) from your wallet.</li>
+                  <li>Paste the TXID in the form and click Submit.</li>
+                </ol>
+              </div>
+            </div>
           </div>
         </div>
 

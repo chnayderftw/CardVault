@@ -14,6 +14,7 @@ const CATEGORY_TABS: ProductCategory[] = [
   'Standard',
   'HQ',
   'UHQ',
+  'Binance',
   'Visa',
   'Mastercard',
   'American Express',

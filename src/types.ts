@@ -1,6 +1,6 @@
-export type CardBrand = 'Visa' | 'Mastercard' | 'American Express' | 'Other';
+export type CardBrand = 'Visa' | 'Mastercard' | 'American Express' | 'Binance' | 'Other';
 export type CardType = 'Standard' | 'HQ' | 'UHQ' | 'Premium' | 'Virtual' | 'Physical';
-export type ProductCategory = 'All' | 'Standard' | 'HQ' | 'UHQ' | 'Visa' | 'Mastercard' | 'American Express';
+export type ProductCategory = 'All' | 'Standard' | 'HQ' | 'UHQ' | 'Binance' | 'Visa' | 'Mastercard' | 'American Express';
 export type CardAvailability = 'in_stock' | 'low_stock' | 'out_of_stock';
 
 export interface Product {

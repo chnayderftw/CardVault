@@ -1065,6 +1065,7 @@ export const AdminDashboard: React.FC = () => {
                     <option value="Visa">Visa</option>
                     <option value="Mastercard">Mastercard</option>
                     <option value="American Express">American Express</option>
+                    <option value="Binance">Binance</option>
                     <option value="Other">Other</option>
                   </select>
                 </div>
@@ -1093,6 +1094,7 @@ export const AdminDashboard: React.FC = () => {
                     <option value="Standard">Standard</option>
                     <option value="HQ">HQ</option>
                     <option value="UHQ">UHQ</option>
+                    <option value="Binance">Binance</option>
                     <option value="Visa">Visa</option>
                     <option value="Mastercard">Mastercard</option>
                     <option value="American Express">American Express</option>

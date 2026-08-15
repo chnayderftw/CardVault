@@ -33,6 +33,11 @@ export const CardVisual: React.FC<CardVisualProps> = ({
           bg: 'bg-[#006fcf]', // American Express Blue
           border: 'border-[#3894e6]/40',
         };
+      case 'Binance':
+        return {
+          bg: 'bg-[#181a20]', // Binance Black/Dark Slate
+          border: 'border-[#f0b90b]/50',
+        };
       default:
         return {
           bg: 'bg-[#1f2937]',
@@ -74,6 +79,16 @@ export const CardVisual: React.FC<CardVisualProps> = ({
           <span className="text-base sm:text-lg font-black italic tracking-normal text-white font-sans select-none drop-shadow-sm text-center leading-tight">
             AMERICAN EXPRESS
           </span>
+        )}
+        {brand === 'Binance' && (
+          <div className="flex items-center justify-center space-x-1.5 drop-shadow-md select-none">
+            <svg className="w-6 h-6 sm:w-7 sm:h-7 text-[#F0B90B] shrink-0" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M16.624 13.92L12 18.543l-4.624-4.623 1.62-1.62 3.004 3.004 3.004-3.004 1.62 1.62zm-4.624-11.464L16.624 7.08l-1.62 1.62-3.004-3.004-3.004 3.004-1.62-1.62L12 2.456zM2.456 12l4.624-4.624 1.62 1.62-3.004 3.004 3.004 3.004-1.62 1.62L2.456 12zm14.464-3.004l1.62-1.62L23.164 12l-4.624 4.624-1.62-1.62 3.004-3.004-3.004-3.004zm-3.004 3.004l-1.916-1.916-1.916 1.916 1.916 1.916 1.916-1.916z" />
+            </svg>
+            <span className="text-lg sm:text-xl font-black tracking-wider text-[#F0B90B] font-sans">
+              BINANCE
+            </span>
+          </div>
         )}
         {brand === 'Other' && (
           <span className="text-xl font-bold italic tracking-wider text-white font-sans select-none drop-shadow-sm">
